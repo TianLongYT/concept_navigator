@@ -6,10 +6,10 @@ class PopInspector extends StatefulWidget {
   const PopInspector({super.key, required this.child,
     required this.isPop,
     required this.landscapePopWidth,
-    this.landscapeContractWidth = 0,
+    this.landscapeContractWidth = 10,
     required this.landscapeHeight,
     required this.portraitPopHeight,
-    this.portraitContractHeight = 0,
+    this.portraitContractHeight = 10,
     required this.portraitWidth,
     //装饰物//伸缩棒。
 
@@ -42,17 +42,19 @@ class _PopInspectorState extends State<PopInspector> {
     double widgetWidth = widget.portraitWidth;
     double widgetHeight = widget.landscapeHeight;
 
+
+
     return AnimatedPositioned(
       duration: Duration(milliseconds: 300),
-      left: widgetWidth - 0,
-      top: 0,
+      left: isLandscape? (widget.isPop? widgetWidth - widget.landscapePopWidth:widgetWidth - widget.landscapeContractWidth!):0,
+      top: isLandscape? 0 : widget.isPop? widgetHeight - widget.portraitPopHeight : widgetHeight - widget.portraitContractHeight!,
 
 
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
-        width: isLandscape ? 200 : widgetWidth,
+        width: isLandscape ? widget.landscapePopWidth : widgetWidth,
         // 横屏时宽度限制200，高度整个屏幕。
-        height: isLandscape ? widgetHeight : 300,
+        height: isLandscape ? widgetHeight : widget.portraitPopHeight,
         // 竖屏时高度限制300，宽度整个屏幕。
         color: Colors.blueAccent,
         child: isLandscape ? Row(
@@ -74,17 +76,30 @@ class _PopInspectorState extends State<PopInspector> {
                 ),
               ),
             ),
-            //widget.child
+
+            Expanded(child: widget.child),
           ],
         ) :
         Column(
           children: [
             Container(
-              width: widgetHeight,
+              width: widgetWidth,
               height: 10,
               color: Colors.black,
-            )
-            ,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius
+                          .circular(20), bottom: Radius.circular(10))
+                  ),
+                  width: widgetWidth * 0.5,
+                  height: 10 * 0.5,
+                  //color: Colors.white,
+                ),
+              ),
+            ),
+            Expanded(child: widget.child),
           ],
         ),
 
