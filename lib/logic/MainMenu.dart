@@ -1,5 +1,6 @@
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/UI/FloatingActionButton/MFloatingButton.dart';
 import 'package:concept_navigator/logic/UI/NodePanel.dart';
 import 'package:concept_navigator/logic/UI/PopInspector.dart';
 import 'package:flutter/material.dart';
@@ -24,10 +25,9 @@ class _MainmenuState extends State<Mainmenu> {
 
   //如何广播事件。
 
-
   @override
   Widget build(BuildContext context) {
-    GlobalStateModel stateModel = context.watch<GlobalStateModel>();
+
     // if(stateModel.State == GlobalState.creatingNode){
     //   showModalBottomSheet(context: context, builder: (context)
     //     {
@@ -43,32 +43,58 @@ class _MainmenuState extends State<Mainmenu> {
     //     });
     // }
 
-
+    AppBar bar = AppBar(
+      // TRY THIS: Try changing the color here to a specific color (to
+      // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+      // change color while the other colors stay the same.
+      backgroundColor: /*Colors.deepPurple,*/ Theme.of(
+        context,
+      ).colorScheme.inversePrimary,
+      // Here we take the value from the MyHomePage object that was created by
+      // the App.build method, and use it to set our appbar title.
+      title: Text("概念编辑"),
+      
+    );
+    //print("top ${MediaQuery.of(context).padding.top}");
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: /*Colors.deepPurple,*/ Theme.of(
-          context,
-        ).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text("app title"),
-      ),
+      appBar: bar,
       body: Nodepanel(),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: (){
-          //final NodeViewData curModel = Provider.of<NodeViewData>(context,listen: false);
-          //开启新状态。
-          Provider.of<GlobalStateModel>(context,listen:  false).State = GlobalState.creatingNode;
+      drawerEnableOpenDragGesture: false,
+      drawer: Drawer(
+        child:  ListView(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+                child: Text(
+                  "AppDrawer",style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              )
+            ),
+            ListTile(
+              leading: const Icon(Icons.dashboard_customize_rounded),
+              title: const Text("概念编辑",style: TextStyle(fontSize: 24),),
+              onTap: (){
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.analytics_outlined),
+              title: const Text("概念分析",style: TextStyle(fontSize: 24),),
+              onTap: (){
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        )
+      ),
 
-          },
+      floatingActionButton:
 
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      MFloatingButton(),// This trailing comma makes auto-formatting nicer for build methods.
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
   Widget _testFunc(){

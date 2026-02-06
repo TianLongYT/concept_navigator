@@ -49,7 +49,7 @@ class NodeAppearance{
   int minShowingLevel = 2;
   int maxShowingLevel = 4;
 
-  double minChildNodeSize = 20;
+  double minChildNodeSize = 80;//看什么时候能看清吧。。。。
     //显示样式。组织模式。
   SortingMode sortingMode = SortingMode.none;
 

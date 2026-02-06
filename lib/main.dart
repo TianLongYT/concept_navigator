@@ -1,4 +1,5 @@
 import 'package:concept_navigator/LearningFlutter_Wang/Provider/Foo_Model_Provider.dart';
+import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
@@ -28,11 +29,15 @@ class MyApp extends StatelessWidget {
     return MultiProvider(//看能不能做成文件存档。
       providers: [
         ChangeNotifierProvider<UserSettingAppearanceModel>(create: (_)=>UserSettingAppearanceModel()),
-        ChangeNotifierProvider<ConceptTreeModel>(create: (_)=>ConceptTreeModel(rootTree: DomainTree()..name = "root"..conceptNodeTree.add(ConceptNodeTree()..name = ""))),
+        ChangeNotifierProvider<ConceptTreeModel>(create: (_)=>ConceptTreeModel(rootTree: DomainTree()..name = "root")),
         ChangeNotifierProvider<ConceptTree2NodeDrawingDataDic>(create: (_)=>ConceptTree2NodeDrawingDataDic()),
+        ChangeNotifierProvider<ConceptTree2DomainDrawingDataDic>(create: (_)=>ConceptTree2DomainDrawingDataDic()),
+
         ChangeNotifierProvider<ConceptTree2NodeViewDataDic>(create: (_)=>ConceptTree2NodeViewDataDic()),
         ChangeNotifierProvider<SelectionViewData>(create: (_)=>SelectionViewData()),
         ChangeNotifierProvider<GlobalStateModel>(create: (_)=>GlobalStateModel()),
+
+        ChangeNotifierProvider<AddressBarModel>(create: (_)=>AddressBarModel()),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
@@ -53,7 +58,10 @@ class MyApp extends StatelessWidget {
           // This works for code too, not just values: Most code changes can be
           // tested with just a hot reload.
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
         ),
+        darkTheme: ThemeData.dark(),
+        themeMode: ThemeMode.light,
         home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );

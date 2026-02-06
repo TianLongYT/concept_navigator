@@ -23,6 +23,14 @@ class NodeDrawingData extends ChangeNotifier{
   int maxX = 4;
   //珠串排列模式
 
+  NodeDrawingData Clone(){
+    return NodeDrawingData(nodeAppearance: this.nodeAppearance)//深拷贝一个Drawingdata,防止干扰之前的。
+      ..text = text
+      ..childrenNodePos = childrenNodePos
+      ..sortingMode = sortingMode
+      ..maxX = maxX;
+  }
+
   //和节点群相关的一系列排版。
   AddNodeDrawingData(){
 
@@ -80,16 +88,37 @@ class NodeDrawingData extends ChangeNotifier{
 
 
 }
-class DomainDrawingData{
+class DomainDrawingData extends NodeDrawingData{
   //自身绘制数据
   //节点绘制模板和层级设置
-  NodeAppearance domainAppearance;//可以换成域绘制数据。
+  //NodeAppearance domainAppearance;//可以换成域绘制数据。
   //节点文字
-  String text = "new domain";
+  //String text = "new domain";
   //子物体相对位置。
-  Map<String,Offset> childrenNodePos = {};
-  Map<String,Offset> childrenDomainPos = {};
-  DomainDrawingData({required this.domainAppearance});
+  //Map<String,Offset> childrenNodePos = {};
+  //Map<String,Offset> childrenDomainPos = {};
+  //子物体相对位置。
+  List<Int2> childrenDomainPos = [];//节点树与节点位置一一对应。
+  SortingMode domainSortingMode = SortingMode.grid;
+  int domainMaxX = 4;
+
+  DomainDrawingData({ required super.nodeAppearance});
+
+  @override AddNodeDrawingData() {
+    // TODO: implement AddNodeDrawingData
+    return super.AddNodeDrawingData();
+  }
+  AddDomainDrawingData(){
+    int num = 0;
+    if(childrenDomainPos.isNotEmpty){
+      var lastdata = childrenDomainPos.last;
+      num = lastdata.x % maxX + lastdata.y * maxX +1;
+    }
+    childrenDomainPos.add(Int2(domainSortingMode == SortingMode.grid?num %maxX:num,domainSortingMode == SortingMode.grid?num~/maxX:0));
+
+    notifyListeners();
+    print("addDomain+ $num ");
+  }
 
 }
 
@@ -102,18 +131,27 @@ enum SortingMode{
 
 class NodeViewData extends ChangeNotifier{
 
+  Offset _lastViewPos = Offset.zero;
+  double _lastScale = 0;
+
   //视角位置，摄像机位置。
   double viewPosX = 0;
   double viewPosY = 0;
 
-  Offset CurViewPos() => Offset(viewPosX, viewPosY);
+  CurViewPos() => Offset(viewPosX, viewPosY);
+  SaveCurData(){
+    _lastViewPos = Offset(viewPosX,viewPosY);
+    _lastScale = this.scale;
+  }
+
   MoveScaleView(Offset delta,double scale){
     viewPosX += delta.dx;
     viewPosY += delta.dy;
-    this.scale = scale;
+    this.scale = _lastScale * scale;
     notifyListeners();
   }
-  EndScaleView(Offset lastViewPos,double lastScale){
+
+  UploadDataCommand(){
     Offset curViewPos = Offset(viewPosX,viewPosY);
     double curScale = scale;
     CommandManager.NaviInstance.PushCommand(Command(
@@ -124,12 +162,13 @@ class NodeViewData extends ChangeNotifier{
           notifyListeners();
         },
         undoFunction: (){
-          viewPosX = lastViewPos.dx;
-          viewPosY = lastViewPos.dy;
-          scale = lastScale;
+          viewPosX = _lastViewPos.dx;
+          viewPosY = _lastViewPos.dy;
+          scale = _lastScale;
           notifyListeners();
         }));
   }
+
 
 //scale,缩放比例
   double scale = 1.0;
