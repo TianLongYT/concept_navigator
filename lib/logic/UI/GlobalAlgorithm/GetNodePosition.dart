@@ -1,11 +1,11 @@
 //提供一个公用计算位置的算法。通过此算法获取节点具体位置。
-import 'dart:ui';
 
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 
 class NodePositionHelper{
@@ -20,6 +20,13 @@ class NodePositionHelper{
 
 
   }
+  NodePositionHelper.byContext(BuildContext context):
+    treeModel = context.read<ConceptTreeModel>(),
+    domainDrawingDataDic = context.read<ConceptTree2DomainDrawingDataDic>(),
+    nodeDrawingDataDic = context.read<ConceptTree2NodeDrawingDataDic>(),
+    viewDrawingDataDic = context.read<ConceptTree2NodeViewDataDic>();
+
+
   ConceptTreeModel treeModel;
   ConceptTree2DomainDrawingDataDic domainDrawingDataDic;
   ConceptTree2NodeDrawingDataDic nodeDrawingDataDic;
@@ -102,8 +109,8 @@ class NodePositionHelper{
       //计算offset偏移。
       Offset allOffset = Offset(domainWidth + emptySize.width * 2, 0) ;//加上基础偏移值。
       double t = domainWidth/(domainWidth+conceptWidth);
-      domainOffset = - allOffset * t;
-      conceptOffset = allOffset * (1-t) ;
+      // domainOffset = - allOffset * t;
+      // conceptOffset = allOffset * (1-t) ;
       domainOffset = Offset.zero;
       conceptOffset = allOffset;
 
@@ -128,7 +135,7 @@ class NodePositionHelper{
       double conceptHeight = 0;
       Size emptySize = Size.zero;
       if(nodeTree!.children.isNotEmpty){
-        final String domainNameKey = ConceptTreeModel.GenerateDomainNodeKey(curDomainKey, nodeTree!.children[0].name, nodeTree!.children[0].alias);
+        final String domainNameKey = nodeTree!.children[0].GetDomainNodeKey(); //ConceptTreeModel.GenerateDomainNodeKey(curDomainKey, nodeTree!.children[0].name, nodeTree!.children[0].alias);
         final NodeDrawingData? drawingData = nodeDrawingDataDic.GetNodeDrawingData(domainNameKey);
         if(drawingData == null) throw Exception("exception,根据子树找不到绘制子节点的渲染物体,键:${domainNameKey}");
 
@@ -391,3 +398,7 @@ class NodePositionHelper{
      return Offset.zero;
    }
 }
+class NodePositionByProvider{
+
+}
+

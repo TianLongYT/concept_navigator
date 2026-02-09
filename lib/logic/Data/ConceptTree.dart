@@ -3,7 +3,16 @@
 //域树。节点树。
 import 'package:flutter/material.dart';
 
-class ConceptNodeTree{
+abstract class NodeTree{
+  bool get IsInDomain;
+  String name = "";
+  String GetDomainKey();
+  String GetDomainNodeKey();
+
+
+}
+
+class ConceptNodeTree extends NodeTree{
   List<ConceptNodeTree> children = [];
   String name = "NewConcept";
   String alias = "";
@@ -18,12 +27,24 @@ class ConceptNodeTree{
     return null;
   }
   @override String toString() {
-    // TODO: implement toString
     return "name${name},alias${alias},children${children},childrenCount${children.length}";
   }
+
+  @override
+  String GetDomainKey() {
+    return domainKey;
+  }
+
+  @override
+  String GetDomainNodeKey() {
+    return ConceptTreeModel.GenerateDomainNodeKey(domainKey, name, alias);
+  }
+
+  @override
+  bool get IsInDomain => false;
 }
 
-class DomainTree{
+class DomainTree extends NodeTree{
   DomainTree? parent = null;
   List<DomainTree> children = [];
   List<ConceptNodeTree> conceptNodeTree = [];
@@ -77,6 +98,14 @@ class DomainTree{
     }
     return res;
   }
+
+  @override
+  String GetDomainNodeKey() {
+    return GetDomainKey();
+  }
+
+  @override
+  bool get IsInDomain => true;
 
 }
 

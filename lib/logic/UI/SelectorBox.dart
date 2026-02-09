@@ -8,9 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class SelectorBox extends StatelessWidget {
-  const SelectorBox({super.key});
 
 
+  const SelectorBox({super.key,required this.offset});
+
+  final Offset offset;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +36,8 @@ class SelectorBox extends StatelessWidget {
     if(position == null)
       return ErrorWidget("选择框查找位置错位，可能是参数传递错误");
     return Positioned(
-        left : position.dx * scale + nodeViewData.viewPosX * scale,
-        top : position.dy * scale + nodeViewData.viewPosY * scale,
+        left : position.dx * scale + nodeViewData.viewPosX * scale + offset.dx,
+        top : position.dy * scale + nodeViewData.viewPosY * scale + offset.dy,
         child: IgnorePointer(
           child: Transform.scale(
             alignment: Alignment.topLeft,

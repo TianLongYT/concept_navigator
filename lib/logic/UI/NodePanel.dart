@@ -122,88 +122,102 @@ class Nodepanel extends StatelessWidget {
         },
         child: Container(color: Colors.black38),
     );
-    final Widget selectorBox = SelectorBox();
-    Widget MainNodePanel = Stack(
-      children: [
-        if (selection.IsInDomain)
-          Stack(
-            children: [
-              //绘制域。
-              ...domainTree!.children.asMap().entries.map((nodeTreeMap){
-
-                Offset position = nodePositionHelper.GetNodePositionByIndex(true, nodeTreeMap.key);
-                DomainDrawingData drawingData= nodePositionHelper.childDomainDrawingData!;
-                Size nodeSize = nodePositionHelper.nodeSize! * scale;
-
-                return Positioned(
-                  left : position.dx * scale + nodeViewData.viewPosX * scale,
-                  top : position.dy * scale + nodeViewData.viewPosY * scale,
 
 
-                  child:SizedBox(
-                      width: nodeSize.width,
-                      height:  nodeSize.height,
-                      child:
-                      LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,)
-                  ),
 
 
-                );
+      return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints){
+        // 获取屏幕方向
+        bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-              })
+        print("MainMenuConstraints${constraints}");
+        double centerLeft = constraints.maxWidth * 0.5;
+        double centerTop = constraints.maxHeight * 0.5;
 
-              //绘制节点
-              ,...domainTree!.conceptNodeTree.asMap().entries.map((nodeTreeMap){
+        final Widget selectorBox = SelectorBox(offset: Offset(centerLeft, centerTop),);
+
+
+        Widget MainNodePanel = Stack(
+          children: [
+            if (selection.IsInDomain)
+              Stack(
+                children: [
+                  //绘制域。
+                  ...domainTree!.children.asMap().entries.map((nodeTreeMap){
+
+                    Offset position = nodePositionHelper.GetNodePositionByIndex(true, nodeTreeMap.key);
+                    DomainDrawingData drawingData= nodePositionHelper.childDomainDrawingData!;
+                    Size nodeSize = nodePositionHelper.nodeSize! * scale;
+
+                    return Positioned(
+                      left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
+                      top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
+
+
+                      child:SizedBox(
+                          width: nodeSize.width,
+                          height:  nodeSize.height,
+                          child:
+                          LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,)
+                      ),
+
+
+                    );
+
+                  })
+
+                  //绘制节点
+                  ,...domainTree!.conceptNodeTree.asMap().entries.map((nodeTreeMap){
+
+                    Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
+                    NodeDrawingData drawingData= nodePositionHelper.childNodeDrawingData!;
+                    Size nodeSize = nodePositionHelper.nodeSize! * scale;
+
+                    return Positioned(
+                      left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
+                      top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
+                      child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,parentNodeTree: domainTree,),
+
+                    );
+                  })
+
+                ],
+              )
+
+            else
+              ...nodeTree!.children.asMap().entries.map((nodeTreeMap){
 
                 Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
-                NodeDrawingData drawingData= nodePositionHelper.childNodeDrawingData!;
-                Size nodeSize = nodePositionHelper.nodeSize! * scale;
 
                 return Positioned(
-                  left : position.dx * scale + nodeViewData.viewPosX * scale,
-                  top : position.dy * scale + nodeViewData.viewPosY * scale,
-                  child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,),
+                  left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
+                  top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
+                  child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,parentNodeTree: nodeTree,),
 
                 );
-              })
 
-            ],
-          )
+              }),
+          ],
+        );
+        Widget MainNodePanelWithGesture = CustomScaleGestureDetector(
 
-        else
-          ...nodeTree!.children.asMap().entries.map((nodeTreeMap){
+          onStart: (startDetails){
+            nodeViewData.SaveCurData();
+            viewDataDic.repaint();
+            print("onScaleStart");
+          },
+          onUpdate: (details){
+            nodeViewData.MoveScaleView(details.focalPointDelta,details.scale);
+            print("onScaleUpdate ${nodeViewData.scale} detail ${details.scale} pos ${nodeViewData.CurViewPos()} focal point ${details.focalPoint} point count ${details.pointerCount} "  );
+            viewDataDic.repaint();
+          },
+          onEnd: (endDetails){
+            nodeViewData.UploadDataCommand();
+            viewDataDic.repaint();
+            print("onScaleEnd");
+          },
 
-            Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
-
-            return Positioned(
-              left : position.dx * scale + nodeViewData.viewPosX * scale,
-              top : position.dy * scale + nodeViewData.viewPosY * scale,
-              child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,),
-
-            );
-
-          }),
-      ],
-    );
-    Widget MainNodePanelWithGesture = CustomScaleGestureDetector(
-
-      onStart: (startDetails){
-        nodeViewData.SaveCurData();
-        viewDataDic.repaint();
-        print("onScaleStart");
-      },
-      onUpdate: (details){
-        nodeViewData.MoveScaleView(details.focalPointDelta,details.scale);
-        print("onScaleUpdate ${nodeViewData.scale} detail ${details.scale} pos ${nodeViewData.CurViewPos()} focal point ${details.focalPoint} point count ${details.pointerCount} "  );
-        viewDataDic.repaint();
-      },
-      onEnd: (endDetails){
-        nodeViewData.UploadDataCommand();
-        viewDataDic.repaint();
-        print("onScaleEnd");
-      },
-
-      child: Listener(
+          child: Listener(
             //onPointerDown: (_){print("ONPointerDown");},//还需要额外处理双指缩放。//键鼠滚轮输入等。//需要使用自定义的手势识别器。
 
             onPointerPanZoomStart: (PointerPanZoomStartEvent details)//专门处理触摸板用的。
@@ -225,13 +239,10 @@ class Nodepanel extends StatelessWidget {
               viewDataDic.repaint();
             },
 
-              child: MainNodePanel,
+            child: MainNodePanel,
           ),
-      );
+        );
 
-
-
-      return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints){
 
         return Stack(
           children: [

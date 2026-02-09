@@ -1,5 +1,10 @@
 
 import 'package:flutter/material.dart';
+class MMath{
+  static double lerp(double v1,double v2,double t){
+    return (v2 - v1)* t / (v1+v2);
+  }
+}
 
 abstract class Int2Base{
   //Offset? offset;

@@ -11,7 +11,7 @@ import 'package:concept_navigator/logic/UI/GlobalAlgorithm/NodePainter.dart';
 class LevelNodePresentation extends StatefulWidget {
   LevelNodePresentation({super.key,double scale = 1.0,required this.isInDomain,required this.drawingData, required this.nodeTree,required this.domainTree}) :
         painter =  NodePainter(drawingData: drawingData),_scale = scale;
-  bool isInDomain;
+  final bool isInDomain;
   final NodeDrawingData drawingData;
   final ConceptNodeTree? nodeTree;
   final DomainTree? domainTree;
@@ -30,7 +30,6 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
   double height = 100;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     showingLevel = false;
   }
@@ -59,12 +58,14 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
       inherit: false,
       fontSize: 14,//动态计算
     );
+    const double BORDER = 2.0;
     //获取字体的高度
     const double EDGEINSETS = 6.0;
     double singleLineTextHeight = TextSizeHelper.GetTextHeight(maxLines: 1, text: widget.drawingData.text, style: textStyle);
-    double fullLineTextHeight = TextSizeHelper.GetTextHeight( maxWidth: width,text: widget.drawingData.text +"?????????????????????????????????????????12345678910", style: textStyle);
+    double fullLineTextHeight = TextSizeHelper.GetTextHeight( maxWidth: width,text: widget.drawingData.text , style: textStyle);
     double nextWidgetTop = singleLineTextHeight + 2 * EDGEINSETS;
-    double centerFontTop = height*0.5 - fullLineTextHeight*0.5 - EDGEINSETS *0.5;
+    double centerFontTop = height*0.5 - fullLineTextHeight*0.5 - EDGEINSETS;
+    //centerFontTop = height * 0.5 - EDGEINSETS;
     centerFontTop = centerFontTop>0? centerFontTop:0;
     print("FullLineTextH${fullLineTextHeight}");
 
@@ -81,7 +82,7 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
       decoration: BoxDecoration(
         color: widget.drawingData.nodeAppearance.nodeColor.withAlpha(200),
         borderRadius: BorderRadius.circular(height * 0.1),
-        border: Border.all(width: 2.0),
+        border: Border.all(width: BORDER,strokeAlign: BorderSide.strokeAlignOutside),
       ),
 
       // 裁剪超出圆角矩形的内容
@@ -113,6 +114,15 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
                   child: SizedBox(
                     height: fullLineTextHeight + 2 * EDGEINSETS,
                     width: width,
+                    // child: Container(
+                    //   color: Colors.black45,
+                    //   child: Padding(
+                    //     padding: const EdgeInsets.all(EDGEINSETS),
+                    //     child: Container(
+                    //       color: Colors.black,
+                    //     ),
+                    //   ),
+                    // ),
                     child: Padding(
 
                       //duration: Duration(milliseconds: 500),
@@ -121,7 +131,7 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
 
                       child: Text(
 
-                        widget.drawingData.text+"?????????????????????????????????????????12345678910",
+                        widget.drawingData.text,
                         // 自动换行
                         softWrap: true,
                         maxLines: showingLevel ? 1 : null,
@@ -155,9 +165,12 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
                         duration: Duration(milliseconds: 1000),
                         child: Container(
                           width: width,
-                            height: showingLevel? height - nextWidgetTop : 0,
+                          height: showingLevel? height - nextWidgetTop : 0,
+                            decoration: BoxDecoration(
+                              color: Colors.black12,
+                              border: Border.all(width: 1.0,strokeAlign: BorderSide.strokeAlignOutside)
+                            ),
                             //duration: Duration(milliseconds: 300),
-                            color: Colors.black12,
                             child: showingLevel? Padding(
                               padding: EdgeInsets.all(0.05 * (height - nextWidgetTop)),
                               child: LevelNodePanel(
