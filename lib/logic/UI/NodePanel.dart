@@ -127,13 +127,27 @@ class Nodepanel extends StatelessWidget {
 
 
       return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints){
+        bool isPop = globalStateModel.State != GlobalState.normal;
         // 获取屏幕方向
         bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-        print("MainMenuConstraints${constraints}");
-        double centerLeft = constraints.maxWidth * 0.5;
-        double centerTop = constraints.maxHeight * 0.5;
+        double landscapeContractWidth = 100;
+        double landscapePopWidth = 200;
+        double portraitContractHeight = 10;
+        double portraitPopHeight = 300;
 
+        double centerLeft = 100;
+        double centerTop = 100;
+
+        if(isLandscape){
+          print("MainMenuConstraints${constraints}");
+          centerLeft = isPop? (constraints.maxWidth - landscapePopWidth)  * 0.5 : (constraints.maxWidth - landscapeContractWidth) * 0.5;
+          centerTop = constraints.maxHeight * 0.5;
+        }
+        else{
+          centerLeft = constraints.maxWidth * 0.5;
+          centerTop = isPop? (constraints.maxHeight - portraitPopHeight) * 0.5 : (constraints.maxHeight - portraitContractHeight) * 0.5;
+        }
         final Widget selectorBox = SelectorBox(offset: Offset(centerLeft, centerTop),);
 
 
@@ -150,15 +164,19 @@ class Nodepanel extends StatelessWidget {
                     Size nodeSize = nodePositionHelper.nodeSize! * scale;
 
                     return Positioned(
-                      left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
-                      top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
+                      left : position.dx * scale + nodeViewData.viewPosX * scale ,
+                      top : position.dy * scale + nodeViewData.viewPosY * scale ,
 
 
-                      child:SizedBox(
-                          width: nodeSize.width,
-                          height:  nodeSize.height,
-                          child:
-                          LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,)
+                      child:AnimatedPadding(
+                        duration: Duration(milliseconds: 200),
+                        padding: EdgeInsetsGeometry.only(left:  centerLeft, top:  centerTop),
+                        child: SizedBox(
+                            width: nodeSize.width,
+                            height:  nodeSize.height,
+                            child:
+                            LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,parentNodeTree: domainTree,)
+                        ),
                       ),
 
 
@@ -174,10 +192,19 @@ class Nodepanel extends StatelessWidget {
                     Size nodeSize = nodePositionHelper.nodeSize! * scale;
 
                     return Positioned(
-                      left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
-                      top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
-                      child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,parentNodeTree: domainTree,),
-
+                      left : position.dx * scale + nodeViewData.viewPosX * scale ,
+                      top : position.dy * scale + nodeViewData.viewPosY * scale ,
+                      child: AnimatedPadding(
+                          //alignment: AlignmentGeometry.xy(100, 100),
+                          padding: EdgeInsetsGeometry.only(left: centerLeft,top: centerTop),
+                          duration: Duration(milliseconds: 200),
+                          child: LevelNode(
+                            scale: scale,
+                            drawingData: nodePositionHelper.childNodeDrawingData!,
+                            nodeTree: nodeTreeMap.value!,
+                            parentNodeTree: domainTree,
+                          ),
+                      ),
                     );
                   })
 
@@ -190,9 +217,18 @@ class Nodepanel extends StatelessWidget {
                 Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
 
                 return Positioned(
-                  left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
-                  top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
-                  child: LevelNode(scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,parentNodeTree: nodeTree,),
+                  left : position.dx * scale + nodeViewData.viewPosX * scale ,
+                  top : position.dy * scale + nodeViewData.viewPosY * scale ,
+                  child: AnimatedPadding(
+                    padding: EdgeInsets.only(left: centerLeft,top: centerTop),
+                    duration: Duration(milliseconds: 200),
+                    child: LevelNode(
+                      scale: scale,
+                      drawingData: nodePositionHelper.childNodeDrawingData!,
+                      nodeTree: nodeTreeMap.value!,
+                      parentNodeTree: nodeTree,
+                    ),
+                  ),
 
                 );
 
@@ -242,7 +278,16 @@ class Nodepanel extends StatelessWidget {
             child: MainNodePanel,
           ),
         );
-
+        Widget PopingEditPanel = PopInspector(
+          isPop: isPop,
+          landscapePopWidth: landscapePopWidth,
+          portraitPopHeight: portraitPopHeight,
+          portraitContractHeight: portraitContractHeight,
+          landscapeContractWidth: landscapeContractWidth,
+          landscapeHeight:constraints.maxHeight,
+          portraitWidth: constraints.maxWidth,
+          child: editorPanel,
+        );
 
         return Stack(
           children: [
@@ -312,8 +357,8 @@ class Nodepanel extends StatelessWidget {
             if(selection.IsSelecting)
               selectorBox,
 
+            PopingEditPanel,
 
-            PopInspector(child: editorPanel, isPop: globalStateModel.State != GlobalState.normal, landscapePopWidth: 200, portraitPopHeight: 300,landscapeContractWidth: 100, landscapeHeight:constraints.maxHeight, portraitWidth: constraints.maxWidth,),
           ],
         );
       },

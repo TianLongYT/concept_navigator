@@ -39,18 +39,13 @@ class LevelNode extends StatelessWidget {
     AddressBarModel addressBarModel = context.watch<AddressBarModel>();
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
 
-    ConceptTree2NodeViewDataDic nodeViewDic = context.watch<ConceptTree2NodeViewDataDic>();
-    NodeViewData? nodeViewData = nodeViewDic.GetNodeViewData(parentNodeTree.GetDomainNodeKey());
-    if(nodeViewData == null){
-      throw Exception("LevelNode找不到NodeViewData");
-    }
+    ConceptTree2NodeViewDataDic nodeViewDic = context.read<ConceptTree2NodeViewDataDic>();
 
-    NodePositionHelper posHelper = NodePositionHelper.byContext(context);
-    posHelper.InitData(parentNodeTree.IsInDomain, parentNodeTree.GetDomainKey(), parentNodeTree.GetDomainNodeKey());
+
 
     //获取当前位置。
-    Offset? pos = posHelper.GetNodePositionByInstance(nodeTree, null);
 
+    FocusNodeHelper focusNodeHelper = FocusNodeHelper(context,parentNodeTree.IsInDomain, parentNodeTree.GetDomainKey(), parentNodeTree.GetDomainNodeKey(),allSize);
 
 
     //drawingData.text = nodeTree.name;
@@ -75,27 +70,7 @@ class LevelNode extends StatelessWidget {
                   selection.SelectedConceptNode = nodeTree;
                   stateModel.State = GlobalState.selectedNode;
 
-                  AnimationController controller = GlobalCoroutine().controller;
-                  double originPosX = nodeViewData.viewPosX;
-                  double targetPosX = -pos!.dx - allSize.width * 0.5;
-                  double originPosY = nodeViewData.viewPosY;
-                  double targetPosY = -pos!.dy - allSize.height * 0.5;
-                  controller.duration = Duration(milliseconds: 300);
-                  controller.addListener((){
-                    double t = controller.value;
-
-                    //print("tick${t}");
-
-                    nodeViewData.viewPosX = Tween(begin: originPosX, end: targetPosX)
-                                              .chain(CurveTween(curve: Curves.easeOut))
-                                              .animate(controller).value;
-                    //print("posX${nodeViewData.viewPosX},origin${originPosX},target${targetPosX}");
-                    nodeViewData.viewPosY = Tween(begin: originPosY,end: targetPosY)
-                                              .chain(CurveTween(curve: Curves.easeOut))
-                                              .animate(controller).value;
-                    nodeViewDic.repaint();
-                  });
-                  controller.forward(from: 0);
+                  focusNodeHelper.FocusNode(nodeTree, null);
                   //controller.stop();
 
                 },

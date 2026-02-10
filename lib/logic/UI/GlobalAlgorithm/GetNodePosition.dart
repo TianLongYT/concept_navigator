@@ -4,6 +4,7 @@ import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GlobalCoroutine.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -398,7 +399,73 @@ class NodePositionHelper{
      return Offset.zero;
    }
 }
-class NodePositionByProvider{
+
+class FocusNodeHelper{
+  FocusNodeHelper(BuildContext context,bool parentIsInDomain,String curDomainKey,String curDomainNodeKey,this.allSize):
+    _posHelper = NodePositionHelper.byContext(context),
+    nodeViewDic = context.read<ConceptTree2NodeViewDataDic>()
+  {
+    _posHelper.InitData(parentIsInDomain, curDomainKey, curDomainNodeKey);
+
+    nodeViewData = nodeViewDic.GetNodeViewData(curDomainNodeKey);
+    if(nodeViewData == null){
+      throw Exception("LevelNode找不到NodeViewData");
+    }
+
+  }
+  FocusNodeHelper.lateInit(BuildContext context):
+        _posHelper = NodePositionHelper.byContext(context),
+        nodeViewDic = context.read<ConceptTree2NodeViewDataDic>()
+  {
+
+  }
+  void Init(bool parentIsInDomain,String curDomainKey,String curDomainNodeKey,Size allSize){
+    nodeViewData = nodeViewDic.GetNodeViewData(curDomainNodeKey);
+    if(nodeViewData == null){
+      throw Exception("LevelNode找不到NodeViewData");
+    }
+    this.allSize = allSize;
+    _posHelper.InitData(parentIsInDomain, curDomainKey, curDomainNodeKey);
+  }
+  final NodePositionHelper _posHelper;
+  late NodeViewData? nodeViewData;
+  final ConceptTree2NodeViewDataDic nodeViewDic;
+  late Size allSize;
+  late VoidCallback moveView;
+
+  void FocusNode(ConceptNodeTree? childConceptTree,DomainTree? childDomainTree ){
+    //获取当前位置。
+    Offset? pos = _posHelper.GetNodePositionByInstance(childConceptTree, childDomainTree);
+    AnimationController controller = GlobalCoroutine().GetController();
+    double originPosX = nodeViewData!.viewPosX;
+    double targetPosX = -pos!.dx - allSize.width * 0.5;
+    double originPosY = nodeViewData!.viewPosY;
+    double targetPosY = -pos!.dy - allSize.height * 0.5;
+    controller.duration = Duration(milliseconds: 300);
+    
+    moveView = (){
+      double t = controller.value;
+
+      //print("tick${t}");
+
+      nodeViewData!.viewPosX = Tween(begin: originPosX, end: targetPosX)
+          .chain(CurveTween(curve: Curves.easeOut))
+          .animate(controller).value;
+      //print("posX${nodeViewData.viewPosX},origin${originPosX},target${targetPosX}");
+      nodeViewData!.viewPosY = Tween(begin: originPosY,end: targetPosY)
+          .chain(CurveTween(curve: Curves.easeOut))
+          .animate(controller).value;
+      nodeViewDic.repaint();
+
+      if(controller.isCompleted){
+        print("controllerCompleted${controller.value}");
+        controller.removeListener(moveView);
+      }
+    };
+    controller.addListener(moveView);
+
+    controller.forward(from: 0);
+  }
 
 }
 

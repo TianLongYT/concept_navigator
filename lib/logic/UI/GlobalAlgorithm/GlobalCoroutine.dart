@@ -17,6 +17,10 @@ class GlobalCoroutine{
     return _instance!;
   }
   AnimationController controller;
+  AnimationController GetController(){
+    return controller;
+  }
+
 
 
 

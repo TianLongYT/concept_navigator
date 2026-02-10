@@ -4,6 +4,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -65,6 +66,8 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
     ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
 
+    FocusNodeHelper focusNodeHelper = FocusNodeHelper.lateInit(context);
+
     return Container(
       color: Colors.blue[100],
       child: Column(
@@ -110,13 +113,14 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
               return;
 
             DomainTree domain2Add = DomainTree()..name = controller.text;
+            DomainDrawingData newDrawingData = DomainDrawingData(nodeAppearance: NodeAppearance())..text = controller.text;
 
             treeModel.AddNewDomainInDomain(selection.currentDomain, domain2Add);
 
 
             domainDrawingDataDic.GetDomainDrawingData(selection.currentDomain)?.AddDomainDrawingData();
             domainDrawingDataDic.putIfAbsent(ConceptTreeModel.AppendDomainKey( selection.currentDomain, domain2Add.name), ()=>
-            DomainDrawingData(nodeAppearance: NodeAppearance())..text = controller.text);
+            newDrawingData);
             viewDataDic.putIfAbsent(ConceptTreeModel.AppendDomainKey( selection.currentDomain, domain2Add.name), ()=>NodeViewData());
 
             controller.clear();
@@ -127,6 +131,10 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
             //选中新创建的节点。
             stateModel.State = GlobalState.selectedDomain;
             selection.SelectedDomain = domain2Add;
+            //聚焦新节点
+            Size allSize = newDrawingData.nodeAppearance.nodeSize * newDrawingData.nodeAppearance.emptySize;
+            focusNodeHelper.Init(selection.IsInDomain, selection.currentDomain, selection.CurrentDomainNodeKey, allSize);
+            focusNodeHelper.FocusNode(null, domain2Add);
 
           }, child: Text("新建域")),
         ],
