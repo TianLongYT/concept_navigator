@@ -1,4 +1,5 @@
 import 'package:concept_navigator/LearningFlutter_Wang/Provider/Foo_Model_Provider.dart';
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<GlobalStateModel>(create: (_)=>GlobalStateModel()),
 
         ChangeNotifierProvider<AddressBarModel>(create: (_)=>AddressBarModel()),
+        ChangeNotifierProvider<CommandManagerForProvider>(create: (_)=>CommandManagerForProvider()),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
@@ -57,11 +59,23 @@ class MyApp extends StatelessWidget {
           //
           // This works for code too, not just values: Most code changes can be
           // tested with just a hot reload.
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          colorScheme:  ColorScheme.fromSeed(
+              brightness: Brightness.light,
+              seedColor: Colors.black,
+              dynamicSchemeVariant: DynamicSchemeVariant.content,
+              contrastLevel: 1,
+          ),
+          //disabledColor:  Colors.black87,
 
         ),
-        darkTheme: ThemeData.dark(),
-        themeMode: ThemeMode.light,
+        darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+                brightness: Brightness.dark,
+                seedColor:Colors.black,
+                dynamicSchemeVariant: DynamicSchemeVariant.content,
+                contrastLevel: 1,
+            )),
+        themeMode: ThemeMode.dark,
         home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );

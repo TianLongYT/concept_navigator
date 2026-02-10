@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:flutter/material.dart';
+
 //使用枚举标记指令类型。辅助处理。
 enum CommandType{
   None,
@@ -23,20 +25,8 @@ class Command{
 //只记录编辑型指令。
 
 class CommandManager{
-  static CommandManager? _editInstance;
-  static CommandManager? _naviInstance;
-  CommandManager._privateConstructor();
-
-  static CommandManager get EditInstance {
-    _editInstance ??= CommandManager._privateConstructor();
-    return _editInstance!;
-  }
-  static CommandManager get NaviInstance {
-    _editInstance ??= CommandManager._privateConstructor();
-    return _editInstance!;
-  }
-
   List<Command> commandStack = [];
+  bool get HasCommand => commandStack.isNotEmpty;
 
   void PushCommand(Command command){
     commandStack.add(command);
@@ -49,6 +39,7 @@ class CommandManager{
   }
 
   List<Command> poppedCommandStack = [];
+  bool get HasPoppedCommand => poppedCommandStack.isNotEmpty;
 
   void Undo(){
     Command? command = PopCommand();
@@ -69,6 +60,60 @@ class CommandManager{
     PushCommand(command);
   }
 }
+
+class SingletonCommandManager extends CommandManager{
+  static SingletonCommandManager? _editInstance;
+  static SingletonCommandManager? _naviInstance;
+  SingletonCommandManager._privateConstructor();
+
+  static SingletonCommandManager get EditInstance {
+    _editInstance ??= SingletonCommandManager._privateConstructor();
+    return _editInstance!;
+  }
+  static SingletonCommandManager get NaviInstance {
+    _naviInstance ??= SingletonCommandManager._privateConstructor();
+    return _naviInstance!;
+  }
+}
+
+
+
+class CommandManagerForProvider extends ChangeNotifier{
+  CommandManagerForProvider():
+    _editInstance = CommandManager(),
+    naviInstance = CommandManager();
+
+
+
+  final CommandManager _editInstance;
+
+  final CommandManager naviInstance;
+
+  bool get HasCommand =>_editInstance.HasCommand;
+  bool get HasPoppedCommand => _editInstance.HasPoppedCommand;
+
+  void PushCommand(Command command){
+    _editInstance.PushCommand(command);
+    notifyListeners();
+  }
+  Command? PopCommand(){
+    notifyListeners();
+    return _editInstance.PopCommand();
+  }
+
+  void Undo(){
+    _editInstance.Undo();
+    notifyListeners();
+  }
+  void Redo(){
+    _editInstance.Redo();
+    notifyListeners();
+  }
+
+
+}
+
+
 
 class MoveNodeCommand extends Command{
   MoveNodeCommand({required super.function, required super.undoFunction});

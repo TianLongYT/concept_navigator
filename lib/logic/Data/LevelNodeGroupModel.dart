@@ -1,6 +1,7 @@
 import 'package:concept_navigator/MTools/MMath.dart';
 import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
+import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:flutter/material.dart';
 
@@ -148,25 +149,30 @@ class NodeViewData extends ChangeNotifier{
     viewPosX += delta.dx;
     viewPosY += delta.dy;
     this.scale = _lastScale * scale;
-    notifyListeners();
+    //notifyListeners();
   }
 
-  UploadDataCommand(){
+  UploadDataCommand(CommandManagerForProvider commandManager,ConceptTree2NodeViewDataDic viewDataDic){
     Offset curViewPos = Offset(viewPosX,viewPosY);
     double curScale = scale;
-    CommandManager.NaviInstance.PushCommand(Command(
+    Offset lastViewPos = _lastViewPos;
+    double lastScale = _lastScale;
+    commandManager.PushCommand(Command(
         function: (){
           viewPosX = curViewPos.dx;
           viewPosY = curViewPos.dy;
           scale = curScale;
-          notifyListeners();
+          viewDataDic.repaint();
+
         },
         undoFunction: (){
-          viewPosX = _lastViewPos.dx;
-          viewPosY = _lastViewPos.dy;
-          scale = _lastScale;
-          notifyListeners();
-        }));
+          viewPosX = lastViewPos.dx;
+          viewPosY = lastViewPos.dy;
+          scale = lastScale;
+          viewDataDic.repaint();
+          print("undo${lastViewPos}");
+        })
+    );
   }
 
 

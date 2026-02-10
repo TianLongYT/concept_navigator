@@ -1,3 +1,4 @@
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
@@ -30,6 +31,7 @@ class Nodepanel extends StatelessWidget {
     final SelectionViewData selection = context.watch<SelectionViewData>();
     final ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
     final GlobalStateModel globalStateModel = context.watch<GlobalStateModel>();
+    final CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
 
     //节点位置助手
     NodePositionHelper nodePositionHelper = NodePositionHelper(treeModel: treeModel, domainDrawingDataDic: domainDrawingDataDic, nodeDrawingDataDic: nodeDrawingDataDic, viewDrawingDataDic: viewDataDic);
@@ -120,7 +122,7 @@ class Nodepanel extends StatelessWidget {
             selection.CancelSelection();
           }
         },
-        child: Container(color: Colors.black38),
+        child: Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
     );
 
 
@@ -248,7 +250,7 @@ class Nodepanel extends StatelessWidget {
             viewDataDic.repaint();
           },
           onEnd: (endDetails){
-            nodeViewData.UploadDataCommand();
+            nodeViewData.UploadDataCommand(commandManager,viewDataDic);
             viewDataDic.repaint();
             print("onScaleEnd");
           },
@@ -271,7 +273,7 @@ class Nodepanel extends StatelessWidget {
             },
             onPointerPanZoomEnd: (details)
             {
-              nodeViewData.UploadDataCommand();
+              nodeViewData.UploadDataCommand(commandManager,viewDataDic);
               viewDataDic.repaint();
             },
 
