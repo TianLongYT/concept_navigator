@@ -3,7 +3,7 @@ import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:flutter/material.dart';
 
 
-
+///废弃类，别用。直接用内置的绘制方法画出的图形要好一万倍。
 class NodePainter extends CustomPainter {
 
   final NodeDrawingData drawingData;

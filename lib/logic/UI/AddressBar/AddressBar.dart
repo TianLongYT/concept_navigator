@@ -45,9 +45,9 @@ class AddressBar extends StatelessWidget {
       // 如果总宽度超出可用宽度，放入隐藏部分
       if (totalWidth > availableWidth) {
 
-        hiddenParts.add(addressWidget(part));
+        hiddenParts.add(addressWidget(part,context));
       } else {
-        visibleParts.add(addressWidgetButton(part,(){
+        visibleParts.add(addressWidgetButton(part,context,(){
           print("点击路径");
           //设置selection。
           selection.currentConceptNodeName = barModel.conceptAddresses[i];
@@ -102,11 +102,11 @@ class AddressBar extends StatelessWidget {
                 }
                 return PopupMenuItem<String>(
                   value: value,
-                  child: addressWidget(entry.value),
+                  child: addressWidget(entry.value,context),
                 );
               }).toList();
             },
-            child: addressWidget(domain),
+            child: addressWidget(domain,context),
           ),
 
           SizedBox(
@@ -126,7 +126,7 @@ class AddressBar extends StatelessWidget {
                   );
                 }).toList();
               },
-              child: addressWidget("..."),
+              child: addressWidget("...",context),
             ),
           SizedBox(width: 10,height: 30,),
           // 如果有可见路径，则显示
@@ -148,7 +148,7 @@ class AddressBar extends StatelessWidget {
 
   void onPathClick(String path) {}
 
-  Widget addressWidget(String text){
+  Widget addressWidget(String text,BuildContext context){
     return Container(
         decoration: BoxDecoration(
           //color: Colors.white,
@@ -157,14 +157,14 @@ class AddressBar extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 30,
           ),
         ),
     );
   }
 
-  Widget addressWidgetButton(String text,VoidCallback? onPressed){
+  Widget addressWidgetButton(String text,BuildContext context,VoidCallback? onPressed){
     // return Material(
     //   shape: CircleBorder(),
     //   child: InkWell(
@@ -181,7 +181,7 @@ class AddressBar extends StatelessWidget {
     return InkWell(
           onTap: onPressed,
 
-          child: addressWidget(text),
+          child: addressWidget(text,context),
 
         );
 

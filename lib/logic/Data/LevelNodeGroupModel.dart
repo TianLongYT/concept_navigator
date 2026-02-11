@@ -25,9 +25,9 @@ class NodeDrawingData extends ChangeNotifier{
   //珠串排列模式
 
   NodeDrawingData Clone(){
-    return NodeDrawingData(nodeAppearance: this.nodeAppearance)//深拷贝一个Drawingdata,防止干扰之前的。
+    return NodeDrawingData(nodeAppearance: this.nodeAppearance.Clone())//深拷贝一个Drawingdata,防止干扰之前的。
       ..text = text
-      ..childrenNodePos = childrenNodePos
+      ..childrenNodePos = [...childrenNodePos]
       ..sortingMode = sortingMode
       ..maxX = maxX;
   }
@@ -105,6 +105,19 @@ class DomainDrawingData extends NodeDrawingData{
 
   DomainDrawingData({ required super.nodeAppearance});
 
+  DomainDrawingData Clone(){
+    return DomainDrawingData(
+        nodeAppearance: nodeAppearance.Clone())
+      ..text = text
+      ..childrenNodePos = [...childrenNodePos]
+      ..sortingMode = sortingMode
+      ..maxX = maxX
+      ..childrenDomainPos = [...childrenDomainPos]
+      ..domainSortingMode = domainSortingMode
+      ..domainMaxX = domainMaxX;
+
+  }
+
   @override AddNodeDrawingData() {
     // TODO: implement AddNodeDrawingData
     return super.AddNodeDrawingData();
@@ -138,6 +151,14 @@ class NodeViewData extends ChangeNotifier{
   //视角位置，摄像机位置。
   double viewPosX = 0;
   double viewPosY = 0;
+
+  NodeViewData Clone(){
+    return NodeViewData()
+      .._lastViewPos = _lastViewPos
+      .._lastScale = _lastScale
+      ..viewPosX = viewPosX
+      ..viewPosY=viewPosY;
+  }
 
   CurViewPos() => Offset(viewPosX, viewPosY);
   SaveCurData(){

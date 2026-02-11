@@ -4,6 +4,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,41 +23,60 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
 
   final TextEditingController controller = TextEditingController();
 
-  void _CheckTextField(String value) {
-    if (value.length == 0) {
-      hasError = true;
+  DomainErrorCheck errorCheckHelper = DomainErrorCheck();
+
+
+  void nameErrorCheck(ConceptTreeModel treeModel,SelectionViewData selection,String textValue){
+    String? errorText = errorCheckHelper.NameErrorCheck(treeModel, selection, textValue);
+    if(errorText != null){
       setState(() {
-        nameError = "域名不能为空";
+        hasError = true;
+        nameError = errorText;
       });
     }
-    else if (CheckContainList(value, ConceptTreeModel.ErrorPatten)) {
-      hasError = true;
+    else{
       setState(() {
-        nameError = "命名中不能连续出现'/'和'_'字符";
-      });
-    }//同一层级中不能出现相同的域。
-
-    else {
-      hasError = false;
-
-      setState(() {
+        hasError = false;
         nameError = null;
       });
     }
   }
-  bool CheckContain(String input,String pattern){
-    return RegExp(pattern).hasMatch(input);
-  }
-
-  bool CheckContainList(String input,List<String> patterns){
-    bool res = false;
-    patterns.forEach((element){
-      if(CheckContain(input, element)){
-        res = true;
-      }
-    });
-    return res;
-  }
+  //
+  // void _CheckTextField(String value) {
+  //   if (value.length == 0) {
+  //     hasError = true;
+  //     setState(() {
+  //       nameError = "域名不能为空";
+  //     });
+  //   }
+  //   else if (CheckContainList(value, ConceptTreeModel.ErrorPatten)) {
+  //     hasError = true;
+  //     setState(() {
+  //       nameError = "命名中不能连续出现'/'和'_'字符";
+  //     });
+  //   }//同一层级中不能出现相同的域。
+  //
+  //   else {
+  //     hasError = false;
+  //
+  //     setState(() {
+  //       nameError = null;
+  //     });
+  //   }
+  // }
+  // bool CheckContain(String input,String pattern){
+  //   return RegExp(pattern).hasMatch(input);
+  // }
+  //
+  // bool CheckContainList(String input,List<String> patterns){
+  //   bool res = false;
+  //   patterns.forEach((element){
+  //     if(CheckContain(input, element)){
+  //       res = true;
+  //     }
+  //   });
+  //   return res;
+  // }
   @override
   Widget build(BuildContext context) {
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
@@ -69,7 +89,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
     FocusNodeHelper focusNodeHelper = FocusNodeHelper.lateInit(context);
 
     return Container(
-      color: Colors.blue[100],
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Column(
 
         children: [
@@ -87,25 +107,10 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
               errorText: nameError,
 
             ),
-            onTap: (){_CheckTextField(controller.text);},
+            //onTap: (){_CheckTextField(controller.text);},
             onChanged:(value){
-              _CheckTextField(value);
-              //同层级不能出现相同域。
-
-              DomainTree? curDomain = treeModel.GetDomainTree(selection.currentDomain);
-              if(curDomain == null)
-                return;
-              for(int i = 0;i<curDomain.children.length;i++){
-                if(value == curDomain.children[i].name){
-
-                  hasError = true;
-                  setState(() {
-                    nameError = "同一层级不能出现相同的域";
-                  });
-                  return;
-                }
-              }
-              },
+              nameErrorCheck(treeModel, selection, value);
+            },
           ),
 
           OutlinedButton(onPressed: (){
@@ -126,7 +131,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
             controller.clear();
 
             //一开始就进行字符判断。
-            _CheckTextField("");
+            nameErrorCheck(treeModel, selection, "");
 
             //选中新创建的节点。
             stateModel.State = GlobalState.selectedDomain;

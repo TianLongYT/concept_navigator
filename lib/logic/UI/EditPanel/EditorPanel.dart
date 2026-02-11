@@ -23,17 +23,25 @@ class EditorPanel extends StatefulWidget {
 }
 
 class _EditorPanelState extends State<EditorPanel> {
+  ConceptNodeTree? lastSelectedConcept;
+  DomainTree? lastSelectedDomain;
 
 
   @override
   Widget build(BuildContext context) {
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
     SelectionViewData selection = context.watch<SelectionViewData>();
-    ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
-    ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
-    ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
-    ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
+    //ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
+    //ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
+    //ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
+    //ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
 
+    bool changeSelected = false;
+    if(lastSelectedConcept!=selection.SelectedConceptNode || lastSelectedDomain != selection.SelectedDomain){
+      changeSelected = true;
+    }
+    lastSelectedConcept = selection.SelectedConceptNode;
+    lastSelectedDomain = selection.SelectedDomain;
 
     switch(stateModel.State) {
       case GlobalState.creatingNode:
@@ -41,14 +49,15 @@ class _EditorPanelState extends State<EditorPanel> {
       case GlobalState.creatingDomain:
         return CreatingDomainPanel();
       case GlobalState.selectedNode:
-
-        return EditingConceptPanel();
+        return EditingConceptPanel(needInit: changeSelected,);
       case GlobalState.selectedDomain:
-        return EditingDomainPanel();
+        return EditingDomainPanel(needInit: changeSelected,);
 
 
       default :
-        return Placeholder();
+        return Container(
+          color: Theme.of(context).colorScheme.surface,
+        );
     }
 
   }

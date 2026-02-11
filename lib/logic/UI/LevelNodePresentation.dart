@@ -80,9 +80,12 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
 
       // 圆角矩形装饰
       decoration: BoxDecoration(
-        color: widget.drawingData.nodeAppearance.nodeColor.withAlpha(200),
+        color: widget.drawingData.nodeAppearance.nodeColor,//Colors.green.blend(), Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(height * 0.1),
-        border: Border.all(width: BORDER,strokeAlign: BorderSide.strokeAlignOutside),
+        border: Border.all(width: BORDER,
+            strokeAlign: BorderSide.strokeAlignOutside,
+            color: Theme.of(context).colorScheme.outline,
+        ),
       ),
 
       // 裁剪超出圆角矩形的内容
@@ -168,7 +171,11 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
                           height: showingLevel? height - nextWidgetTop : 0,
                             decoration: BoxDecoration(
                               color: Colors.black12,
-                              border: Border.all(width: 1.0,strokeAlign: BorderSide.strokeAlignOutside)
+                              border: Border.all(
+                                  width: 1.0,
+                                  strokeAlign: BorderSide.strokeAlignOutside,
+                                  color: Theme.of(context).colorScheme.outline
+                              ),
                             ),
                             //duration: Duration(milliseconds: 300),
                             child: showingLevel? Padding(

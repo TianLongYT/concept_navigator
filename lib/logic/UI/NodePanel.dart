@@ -122,7 +122,7 @@ class Nodepanel extends StatelessWidget {
             selection.CancelSelection();
           }
         },
-        child: Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+        child: Container(color: Theme.of(context).colorScheme.surface),
     );
 
 

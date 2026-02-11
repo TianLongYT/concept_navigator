@@ -4,12 +4,6 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 
-//外观设置
-
-enum Theme{
-  light,
-  black,
-}
 enum Shape{
   rect,
   rRect,
@@ -32,7 +26,7 @@ class NodeAppearance{
   //节点形状
   Shape shape = Shape.rRect;
   //节点颜色
-  Color nodeColor = Colors.white;
+  Color nodeColor = Colors.white.withAlpha(200);
   //核心节点大小
   Size nodeSize = Size(100*1.3,100);
   //留白。。。。
@@ -52,6 +46,21 @@ class NodeAppearance{
   double minChildNodeSize = 80;//看什么时候能看清吧。。。。
     //显示样式。组织模式。
   SortingMode sortingMode = SortingMode.none;
+
+  NodeAppearance Clone(){
+    return NodeAppearance()
+      ..shape = shape
+      ..nodeColor = nodeColor
+      ..nodeSize = nodeSize
+      ..emptySize = emptySize
+      ..fontColor = fontColor
+      ..minFontSize = maxFontSize
+      ..minShowingLevel = minShowingLevel
+      ..maxShowingLevel = maxShowingLevel
+      ..minChildNodeSize = minChildNodeSize
+      ..sortingMode = sortingMode;
+
+  }
 
 }
 class UserSettingAppearanceModel extends ChangeNotifier{

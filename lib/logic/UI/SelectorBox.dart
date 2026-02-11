@@ -48,7 +48,9 @@ class SelectorBox extends StatelessWidget {
               height: nodeSize.height ,
               decoration: BoxDecoration(
                 color: Colors.transparent,
-                border: Border.all(),
+                shape: BoxShape.rectangle,
+                border: Border.all(width: 2,style: BorderStyle.solid,color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.all(Radius.circular(nodeSize.height * 0.1)),
               ),
             ),
           ),

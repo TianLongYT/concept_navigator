@@ -61,9 +61,9 @@ class MyApp extends StatelessWidget {
           // tested with just a hot reload.
           colorScheme:  ColorScheme.fromSeed(
               brightness: Brightness.light,
-              seedColor: Colors.black,
-              dynamicSchemeVariant: DynamicSchemeVariant.content,
-              contrastLevel: 1,
+              seedColor: HSLColor.fromAHSL(1, 200, 0.1, 0.2).toColor(),
+              dynamicSchemeVariant: DynamicSchemeVariant.neutral,
+              contrastLevel: 0,
           ),
           //disabledColor:  Colors.black87,
 
@@ -71,11 +71,11 @@ class MyApp extends StatelessWidget {
         darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
                 brightness: Brightness.dark,
-                seedColor:Colors.black,
+                seedColor:HSLColor.fromAHSL(1, 54, 0.3, 0.2).toColor(),
                 dynamicSchemeVariant: DynamicSchemeVariant.content,
-                contrastLevel: 1,
+                contrastLevel: 0,
             )),
-        themeMode: ThemeMode.dark,
+        themeMode: ThemeMode.dark ,
         home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );

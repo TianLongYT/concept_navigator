@@ -4,6 +4,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,19 +30,7 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
     return value.length == 0;
   }
 
-  bool CheckContain(String input,String pattern){
-    return RegExp(pattern).hasMatch(input);
-  }
 
-  bool CheckContainList(String input,List<String> patterns){
-    bool res = false;
-    patterns.forEach((element){
-      if(CheckContain(input, element)){
-        res = true;
-      }
-    });
-    return res;
-  }
 
   bool hasError = true;
 
@@ -51,43 +40,43 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
 
   final TextEditingController aliasController = TextEditingController();
 
-  void _CheckTextField(String value){
-    if(CheckEmpty(value) == true){
-      hasError = true;
-      setState(() {
-        nameError = "概念名不能为空";
-      });
-    }
-    else if(CheckContainList(value, ConceptTreeModel.ErrorPatten)){
-      hasError = true;
-      setState(() {
-        nameError = "命名中不能连续出现'/'和'_'字符";
+  ConceptErrorCheck errorCheckHelper = ConceptErrorCheck();
 
 
+  void nameErrorCheck(ConceptTreeModel treeModel,SelectionViewData selection,String textValue,String alias){
+    String? errorText = errorCheckHelper.NameErrorCheck(treeModel, selection, textValue, alias);
+    if(errorText != null){
+      setState(() {
+        hasError = true;
+        nameError = errorText;
       });
     }
     else{
-      hasError = false;
-
       setState(() {
+        hasError = false;
         nameError = null;
-
+        aliasError = null;
+      });
+    }
+  }
+  void aliasErrorCheck(ConceptTreeModel treeModel,SelectionViewData selection,String textValue,String alias){
+    String? errorText = errorCheckHelper.AliasErrorCheck(treeModel, selection, textValue, alias);
+    if(errorText != null){
+      setState(() {
+        hasError = true;
+        aliasError = errorText;
+      });
+    }
+    else{
+      setState(() {
+        hasError = false;
+        aliasError = null;
+        nameError = null;
       });
     }
   }
 
-  void _CheckAliasTextField(ConceptTreeModel treeModel,SelectionViewData selection,String value){
-    //同一域内不允许出现名字和别名都相同的概念。
-    if(value.length != 0){
-      if(treeModel.ContainConceptNode(ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text, aliasController.text))){
-        hasError = true;
-        setState(() {
-          aliasError = "同一域内不允许出现名字和别名都相同的概念";
 
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +91,11 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
 
     FocusNodeHelper focusNodeHelper = FocusNodeHelper.lateInit(context);
 
+
+
+
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Column(
 
         children: [
@@ -121,8 +113,8 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
               errorText: nameError,
 
             ),
-            onTap: (){_CheckTextField(controller.text);},
-            onChanged: _CheckTextField,
+            //onTap: (){nameErrorCheck(treeModel,selection,controller.text,aliasController.text);},
+            onChanged: (value){nameErrorCheck(treeModel, selection, value, aliasController.text);},
           ),
           TextField(
             controller: aliasController,
@@ -134,15 +126,13 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
               helperText: "取不同别名以区别同名概念",
               errorText:aliasError,
             ),
-
+            //onTap: (){nameErrorCheck(treeModel,selection,controller.text,aliasController.text);},
             onChanged: (value){
-              _CheckAliasTextField(treeModel,selection,value);
+              aliasErrorCheck(treeModel, selection, controller.text, value);
             }
             ,
           ),
-          OutlinedButton(onPressed: (){
-            if(hasError)
-              return;
+          OutlinedButton(onPressed:hasError?null: (){
 
             ConceptNodeTree node2Add = ConceptNodeTree()..name = controller.text..alias = aliasController.text;
             NodeDrawingData newDrawingData =NodeDrawingData(nodeAppearance: NodeAppearance())..text = controller.text;
@@ -181,9 +171,9 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
             controller.clear();
             aliasController.clear();
 
-            //一开始就进行字符判断。
-            _CheckTextField("");
-            _CheckAliasTextField(treeModel,selection,"");
+            //一开始就进行字符判断。更新状态。
+            nameErrorCheck(treeModel, selection, "", "");
+            aliasErrorCheck(treeModel, selection, "", "");
 
             //选中新创建的节点。
             stateModel.State = GlobalState.selectedNode;

@@ -62,15 +62,15 @@ class _PopInspectorState extends State<PopInspector> {
             Container(
               width: 10,
               height: widgetHeight,
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.outline,
               child: Center(
                 child: Container(
                   decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.vertical(top: Radius
                           .circular(20), bottom: Radius.circular(10))
                   ),
-                  width: 10 * 0.5,
+                  width: 10 * 0.2,
                   height: widgetHeight * 0.5,
                   //color: Colors.white,
                 ),
@@ -85,15 +85,15 @@ class _PopInspectorState extends State<PopInspector> {
             Container(
               width: widgetWidth,
               height: 10,
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.outline,
               child: Center(
                 child: Container(
                   decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.vertical(top: Radius
                           .circular(20), bottom: Radius.circular(10))
                   ),
-                  width: widgetWidth * 0.5,
+                  width: widgetWidth * 0.2,
                   height: 10 * 0.5,
                   //color: Colors.white,
                 ),

@@ -19,6 +19,9 @@ class _MFloatingButtonState extends State<MFloatingButton> {
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
     SelectionViewData selection = context.watch<SelectionViewData>();
     CommandManagerForProvider commandManager = context.watch<CommandManagerForProvider>();
+    bool hasCommand = commandManager.HasCommand;
+    bool hasPoppedCommand = commandManager.HasPoppedCommand;
+    //hasPoppedCommand = false;
 
     return Container(
       //color: Colors.blue[100],
@@ -69,13 +72,13 @@ class _MFloatingButtonState extends State<MFloatingButton> {
                   width: 56,
                   height: 56,
                   child:  FloatingActionButton(
-                    onPressed: commandManager.HasCommand? (){
+                    onPressed: hasCommand ? (){
 
                       commandManager.Undo();
                     }:null,
-
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                    disabledElevation: 0,
+                    backgroundColor: hasCommand? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                    foregroundColor: hasCommand? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                     child: Icon(Icons.arrow_back_rounded),
                   ),
                 ),
@@ -85,11 +88,12 @@ class _MFloatingButtonState extends State<MFloatingButton> {
                   height: 56,
                   child: FloatingActionButton(
                     //backgroundColor: Colors.green,
-                    onPressed: commandManager.HasPoppedCommand?(){
+                    onPressed: hasPoppedCommand?(){
                       commandManager.Redo();
                     }:null,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                    disabledElevation: 0,
+                    backgroundColor: hasPoppedCommand? Theme.of(context).colorScheme.primaryContainer:Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                    foregroundColor: hasPoppedCommand? Theme.of(context).colorScheme.onPrimaryContainer:Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                     child: Icon(Icons.arrow_forward_rounded),
                   ),
                 ),
@@ -102,7 +106,7 @@ class _MFloatingButtonState extends State<MFloatingButton> {
                 child: Icon(
                   _isExpanded ? Icons.close : Icons.add,
                 ),
-                backgroundColor: Colors.blue,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               ),
 
             ],
