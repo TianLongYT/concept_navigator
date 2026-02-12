@@ -4,7 +4,6 @@ class CustomScaleGestureRecognizer extends ScaleGestureRecognizer{
 
   @override
   void rejectGesture(int pointer) {
-    // TODO: implement rejectGesture
     super.acceptGesture(pointer);
   }
 
@@ -21,7 +20,6 @@ class CustomScaleGestureDetector extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return RawGestureDetector(
       gestures: {
         CustomScaleGestureRecognizer:

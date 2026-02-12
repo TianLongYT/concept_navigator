@@ -17,10 +17,16 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class Nodepanel extends StatelessWidget {
+class Nodepanel extends StatefulWidget {
   const Nodepanel({super.key});
-  //制作levelNode的排版功能。显示所有的levelNode。
 
+  @override
+  State<Nodepanel> createState() => _NodepanelState();
+}
+
+class _NodepanelState extends State<Nodepanel> {
+  //制作levelNode的排版功能。显示所有的levelNode。
+  bool isScaling = false;
 
   @override
   Widget build(BuildContext context) {
@@ -152,11 +158,12 @@ class Nodepanel extends StatelessWidget {
         }
         final Widget selectorBox = SelectorBox(offset: Offset(centerLeft, centerTop),);
 
-
         Widget MainNodePanel = Stack(
+          //clipBehavior: Clip.antiAlias,
           children: [
             if (selection.IsInDomain)
               Stack(
+                //clipBehavior: Clip.antiAlias,
                 children: [
                   //绘制域。
                   ...domainTree!.children.asMap().entries.map((nodeTreeMap){
@@ -165,20 +172,17 @@ class Nodepanel extends StatelessWidget {
                     DomainDrawingData drawingData= nodePositionHelper.childDomainDrawingData!;
                     Size nodeSize = nodePositionHelper.nodeSize! * scale;
 
-                    return Positioned(
-                      left : position.dx * scale + nodeViewData.viewPosX * scale ,
-                      top : position.dy * scale + nodeViewData.viewPosY * scale ,
+                    return AnimatedPositioned(
+                      left : position.dx *scale +nodeViewData.viewPosX*scale,
+                      top :  position.dy *scale + nodeViewData.viewPosY*scale ,
+                      duration: Duration(milliseconds: 100),
+                      curve: Curves.easeOut,
 
-
-                      child:AnimatedPadding(
-                        duration: Duration(milliseconds: 200),
-                        padding: EdgeInsetsGeometry.only(left:  centerLeft, top:  centerTop),
-                        child: SizedBox(
-                            width: nodeSize.width,
-                            height:  nodeSize.height,
-                            child:
-                            LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,parentNodeTree: domainTree,)
-                        ),
+                      child:SizedBox(
+                          width: nodeSize.width,
+                          height:  nodeSize.height,
+                          child:
+                          LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,parentNodeTree: domainTree,)
                       ),
 
 
@@ -192,20 +196,21 @@ class Nodepanel extends StatelessWidget {
                     Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
                     NodeDrawingData drawingData= nodePositionHelper.childNodeDrawingData!;
                     Size nodeSize = nodePositionHelper.nodeSize! * scale;
+                    //print("AnimatedPos!!!!!!!!!!!!!!${ position.dx * scale +nodeViewData.viewPosX * scale}");
 
-                    return Positioned(
-                      left : position.dx * scale + nodeViewData.viewPosX * scale ,
-                      top : position.dy * scale + nodeViewData.viewPosY * scale ,
-                      child: AnimatedPadding(
-                          //alignment: AlignmentGeometry.xy(100, 100),
-                          padding: EdgeInsetsGeometry.only(left: centerLeft,top: centerTop),
-                          duration: Duration(milliseconds: 200),
-                          child: LevelNode(
-                            scale: scale,
-                            drawingData: nodePositionHelper.childNodeDrawingData!,
-                            nodeTree: nodeTreeMap.value!,
-                            parentNodeTree: domainTree,
-                          ),
+                    return AnimatedPositioned(
+                      left : position.dx * scale  + centerLeft,
+                      top : position.dy * scale  + centerTop,
+                      duration: isScaling? Duration(milliseconds: 200): Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      child: Transform.translate(
+                        offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
+                        child: LevelNode(
+                          scale: scale,
+                          drawingData: nodePositionHelper.childNodeDrawingData!,
+                          nodeTree: nodeTreeMap.value!,
+                          parentNodeTree: domainTree,
+                        ),
                       ),
                     );
                   })
@@ -218,18 +223,16 @@ class Nodepanel extends StatelessWidget {
 
                 Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
 
-                return Positioned(
-                  left : position.dx * scale + nodeViewData.viewPosX * scale ,
-                  top : position.dy * scale + nodeViewData.viewPosY * scale ,
-                  child: AnimatedPadding(
-                    padding: EdgeInsets.only(left: centerLeft,top: centerTop),
-                    duration: Duration(milliseconds: 200),
-                    child: LevelNode(
-                      scale: scale,
-                      drawingData: nodePositionHelper.childNodeDrawingData!,
-                      nodeTree: nodeTreeMap.value!,
-                      parentNodeTree: nodeTree,
-                    ),
+                return AnimatedPositioned(
+                  left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
+                  top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
+                  duration: Duration(milliseconds: 100),
+
+                  child: LevelNode(
+                    scale: scale,
+                    drawingData: nodePositionHelper.childNodeDrawingData!,
+                    nodeTree: nodeTreeMap.value!,
+                    parentNodeTree: nodeTree,
                   ),
 
                 );
@@ -242,16 +245,26 @@ class Nodepanel extends StatelessWidget {
           onStart: (startDetails){
             nodeViewData.SaveCurData();
             viewDataDic.repaint();
+
+
             print("onScaleStart");
           },
           onUpdate: (details){
             nodeViewData.MoveScaleView(details.focalPointDelta,details.scale);
             print("onScaleUpdate ${nodeViewData.scale} detail ${details.scale} pos ${nodeViewData.CurViewPos()} focal point ${details.focalPoint} point count ${details.pointerCount} "  );
             viewDataDic.repaint();
+            if(isScaling == false){
+              setState(() {
+                isScaling = true;
+              });
+            }
           },
           onEnd: (endDetails){
             nodeViewData.UploadDataCommand(commandManager,viewDataDic);
             viewDataDic.repaint();
+            setState(() {
+              isScaling = false;
+            });
             print("onScaleEnd");
           },
 
