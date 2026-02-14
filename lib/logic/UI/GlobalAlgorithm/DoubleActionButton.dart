@@ -20,7 +20,7 @@ class DoubleActionButton extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const DoubleActionButton({
-    Key? key,
+    super.key,
     //required this.leftText,
     //required this.rightText,
     this.onLeftPressed,
@@ -35,7 +35,7 @@ class DoubleActionButton extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.lChild,
     this.rChild,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,15 +46,17 @@ class DoubleActionButton extends StatelessWidget {
     return Container(
       height: height,
       width: width,
-      padding: padding,
-      child: DecoratedBox(
+      //padding: padding,
+      //child: DecoratedBox(//这个是关键，可以绕过container的边框占用。
         decoration: BoxDecoration(
           border: Border.all(
             color: borderColor ?? defaultBorderColor,
             width: borderWidth,
+            strokeAlign: BorderSide.strokeAlignInside,
           ),
           borderRadius: BorderRadius.circular(borderRadius),
         ),
+
         child: Row(
           children: [
             // 左按钮
@@ -87,7 +89,7 @@ class DoubleActionButton extends StatelessWidget {
             ),
           ],
         ),
-      ),
+     // ),
     );
   }
 

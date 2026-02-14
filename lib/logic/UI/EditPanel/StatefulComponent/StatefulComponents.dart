@@ -105,7 +105,7 @@ class AnimatedStatefulComponent extends StatelessWidget{
     required this.duration,
     required this.child,
     this.paddingOutSide = const EdgeInsetsGeometry.all(10),
-    this.paddingInside = const EdgeInsetsGeometry.all(10),
+    this.paddingInside = const EdgeInsetsGeometry.all(16),
     this.componentTitle ="test",
     this.componentHint = "test2",
     this.componentState = "test3",
@@ -142,7 +142,7 @@ class AnimatedStatefulComponent extends StatelessWidget{
       curve: curve,
       duration: duration,
       builder:(context,value,child){
-        print("customAnimation!!!${value}");
+        print("customAnimationRebuild${value}");
         return Padding(
           padding: paddingOutSide,
           child: Column(
@@ -176,5 +176,6 @@ class AnimatedStatefulComponent extends StatelessWidget{
 
     );
   }
+
 
 }
