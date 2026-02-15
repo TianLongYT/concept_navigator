@@ -46,7 +46,7 @@ class LevelDomain extends StatelessWidget {
           onTap: (){
             print("clicked domain ${domainTree.name}");
             selection.SelectedDomain = domainTree;
-            stateModel.State = GlobalState.selectedDomain;
+            stateModel.State = GlobalState.editingDomain;
 
             focusNodeHelper.FocusNode(null, domainTree);
 

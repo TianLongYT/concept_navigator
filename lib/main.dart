@@ -5,6 +5,7 @@ import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/MainMenu.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
@@ -37,9 +38,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ConceptTree2NodeViewDataDic>(create: (_)=>ConceptTree2NodeViewDataDic()),
         ChangeNotifierProvider<SelectionViewData>(create: (_)=>SelectionViewData()),
         ChangeNotifierProvider<GlobalStateModel>(create: (_)=>GlobalStateModel()),
+        ChangeNotifierProvider<EditingStateModel>(create: (_)=>EditingStateModel()),
 
         ChangeNotifierProvider<AddressBarModel>(create: (_)=>AddressBarModel()),
         ChangeNotifierProvider<CommandManagerForProvider>(create: (_)=>CommandManagerForProvider()),
+
+        ProxyProvider0<NodeSwapModel>(
+          create: (_)=>NodeSwapModel(),
+          update: (BuildContext context, NodeSwapModel? value) {
+            if(value == null) {
+              return NodeSwapModel();
+            }
+            return value..updateTree(context, context.watch<SelectionViewData>(),context.watch<ConceptTreeModel>(),context.watch<ConceptTree2DomainDrawingDataDic>(),context.watch<ConceptTree2NodeDrawingDataDic>());
+          },
+        )
       ],
       child: MaterialApp(
         title: 'Flutter Demo',

@@ -59,6 +59,32 @@ class CommandManager{
     command.function();
     PushCommand(command);
   }
+  ///清理stack中的所有内容。
+  void init(){
+    commandStack.clear();
+    poppedCommandStack.clear();
+  }
+  void undoAll(){
+    Command? command = PopCommand();
+    if(command == null){
+      print("历史操作库中已无操作");
+      return;
+    }
+    command.undoFunction();
+    poppedCommandStack.add(command);
+    undoAll();
+  }
+  void redoAll(){
+    if(poppedCommandStack.isEmpty){
+      print("必须重做一次后才能再做");
+      return;
+    }
+    Command command = poppedCommandStack.removeLast();
+    command.function();
+    PushCommand(command);
+    redoAll();
+  }
+
 }
 
 class SingletonCommandManager extends CommandManager{
@@ -81,13 +107,15 @@ class SingletonCommandManager extends CommandManager{
 class CommandManagerForProvider extends ChangeNotifier{
   CommandManagerForProvider():
     _editInstance = CommandManager(),
-    naviInstance = CommandManager();
+    naviInstance = CommandManager(),
+    moveNodeInstance = CommandManager();
 
 
 
-  final CommandManager _editInstance;
+  final CommandManager _editInstance;//使用主方法会通知监听的widget。
 
   final CommandManager naviInstance;
+  final CommandManager moveNodeInstance;//其他只起辅助作用。
 
   bool get HasCommand =>_editInstance.HasCommand;
   bool get HasPoppedCommand => _editInstance.HasPoppedCommand;

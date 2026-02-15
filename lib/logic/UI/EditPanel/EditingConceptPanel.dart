@@ -276,7 +276,7 @@ class _EditingConceptPanelState extends State<EditingConceptPanel> {
     final List<Widget> children = [
       conceptInfo
       ,
-      ConceptMoveComponent(),
+      ConceptMoveComponent(needInit:  widget.needInit),
       ConceptMoveComponent(),
       ConceptMoveComponent(),
       ConceptMoveComponent(),

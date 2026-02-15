@@ -37,6 +37,7 @@ class _NodepanelState extends State<Nodepanel> {
     final SelectionViewData selection = context.watch<SelectionViewData>();
     final ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
     final GlobalStateModel globalStateModel = context.watch<GlobalStateModel>();
+    final EditingStateModel editingStateModel = context.watch<EditingStateModel>();
     final CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
 
     //节点位置助手
@@ -113,7 +114,7 @@ class _NodepanelState extends State<Nodepanel> {
     //
     // }
 
-    print("重新绘制stackModel,节点树"+treeModel.PrintTree() + "\r\n概念树字典${treeModel.PrintDic()}"+"\r\n节点名到渲染物"+nodeDrawingDataDic.toString());
+    print("MainNodePanel重新绘制stackModel,节点树"+treeModel.PrintTree() + "\r\n概念树字典${treeModel.PrintDic()}"+"\r\n节点名到渲染物"+nodeDrawingDataDic.toString()+"\r\n当前域绘制物${nodePositionHelper.domainDrawingData?.childrenNodePos}");
     final Widget editorPanel = GestureDetector(
       onTap: (){
         print("onTapEditor");
@@ -123,12 +124,51 @@ class _NodepanelState extends State<Nodepanel> {
     final Widget bgContainer = GestureDetector(//手势识别会进行冲突判断，且一次仅有一个手势可以被执行。
         onTap: (){
           print("onTap");
+          if(editingStateModel.State == EditingState.waitingMovingTarget){
+            globalStateModel.State = GlobalState.normal;
+            return;
+          }
+
           if(selection.IsSelecting) {
             globalStateModel.State = GlobalState.normal;
             selection.CancelSelection();
           }
         },
         child: Container(color: Theme.of(context).colorScheme.surface),
+    );
+    //当处于节点移动模式时，周围有虚化模糊的颜色。
+    final Widget hintPanel =
+    IgnorePointer(
+
+      child: Stack(
+
+        children:[
+          Positioned(
+            top: 40,
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: AlignmentGeometry.topCenter,
+              child: Text(
+                editingStateModel.State == EditingState.waitingMovingTarget? "选择目标节点交换(临时)" :"选择你想移动的节点",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 40
+                ),
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                width: 10,
+              )
+            ),
+          ),
+
+        ],
+      ),
     );
 
 
@@ -194,14 +234,16 @@ class _NodepanelState extends State<Nodepanel> {
                   ,...domainTree!.conceptNodeTree.asMap().entries.map((nodeTreeMap){
 
                     Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
+                    print("Index2Position${position}");
                     NodeDrawingData drawingData= nodePositionHelper.childNodeDrawingData!;
                     Size nodeSize = nodePositionHelper.nodeSize! * scale;
                     //print("AnimatedPos!!!!!!!!!!!!!!${ position.dx * scale +nodeViewData.viewPosX * scale}");
 
                     return AnimatedPositioned(
+                      key: Key(nodePositionHelper.childNodeDrawingData!.text),//不考虑性能。直接来罢！为了能成功交换节点而制作的。
                       left : position.dx * scale  + centerLeft,
                       top : position.dy * scale  + centerTop,
-                      duration: isScaling? Duration(milliseconds: 200): Duration(milliseconds: 200),
+                      duration: isScaling? Duration(milliseconds: 0): Duration(milliseconds: 200),
                       curve: Curves.easeOut,
                       child: Transform.translate(
                         offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
@@ -371,6 +413,8 @@ class _NodepanelState extends State<Nodepanel> {
             //绘制选择框光标。
             if(selection.IsSelecting)
               selectorBox,
+            if(editingStateModel.State == EditingState.waitingMovingTarget || editingStateModel.State == EditingState.selectingMovingNode)
+              hintPanel,
 
             PopingEditPanel,
 

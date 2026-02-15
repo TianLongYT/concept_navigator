@@ -47,10 +47,7 @@ class NodePositionHelper{
 
 
 
-  void InitData(bool isInDomain
-      ,String curDomainKey
-      ,String curDomainNodeKey
-      ){
+  void InitData(bool isInDomain,String curDomainKey,String curDomainNodeKey){
     this.isInDomain = isInDomain;
     this.curDomainKey = curDomainKey;
 

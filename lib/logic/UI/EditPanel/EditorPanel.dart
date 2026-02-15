@@ -42,15 +42,16 @@ class _EditorPanelState extends State<EditorPanel> {
     }
     lastSelectedConcept = selection.SelectedConceptNode;
     lastSelectedDomain = selection.SelectedDomain;
+    Widget? editWidget;
 
     switch(stateModel.State) {
-      case GlobalState.creatingNode:
+      case GlobalState.creatingConcept:
         return CreatingConceptPanel();
       case GlobalState.creatingDomain:
         return CreatingDomainPanel();
-      case GlobalState.selectedNode:
+      case GlobalState.editingConcept:
         return EditingConceptPanel(needInit: changeSelected,);
-      case GlobalState.selectedDomain:
+      case GlobalState.editingDomain:
         return EditingDomainPanel(needInit: changeSelected,);
 
 

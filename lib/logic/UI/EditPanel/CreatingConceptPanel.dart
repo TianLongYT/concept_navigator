@@ -176,7 +176,7 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
             aliasErrorCheck(treeModel, selection, "", "");
 
             //选中新创建的节点。
-            stateModel.State = GlobalState.selectedNode;
+            stateModel.State = GlobalState.editingConcept;
             selection.SelectedConceptNode = node2Add;
 
             // TODO: 聚焦对象。

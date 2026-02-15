@@ -1,3 +1,4 @@
+import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickEnum.dart';
 import 'package:flutter/material.dart';
 
 /// 摇杆背景组件（正方形 + 四方向梯形 + 中心方块） by deepSeek
@@ -6,10 +7,10 @@ class MJoystickSquireBase extends StatelessWidget {
   final Duration animationDuration; // 颜色过渡动画时长
   final double size;                // 整体正方形边长
   final double trapezoidHeight;     // 梯形高度（边框厚度）
-  final Map<Direction, bool> highlighted; // 各区域高亮状态
-  final Map<Direction, Color> baseColors; // 各区域基础颜色
-  final Map<Direction, Color> highlightColors; // 各区域高亮颜色
-  final Map<Direction, IconData> icons; // 方向图标（中心可不传）
+  final Map<EJoystickDirection, bool> highlighted; // 各区域高亮状态
+  final Map<EJoystickDirection, Color> baseColors; // 各区域基础颜色
+  final Map<EJoystickDirection, Color> highlightColors; // 各区域高亮颜色
+  final Map<EJoystickDirection, IconData> icons; // 方向图标（中心可不传）
   final double iconSize;           // 图标大小
   final Color iconColor;          // 图标颜色
   final Color? borderColor;      // 边框颜色，null 表示不绘制边框
@@ -27,10 +28,10 @@ class MJoystickSquireBase extends StatelessWidget {
     this.baseColors = const {},
     this.highlightColors = const {},
     this.icons = const {
-      Direction.left:Icons.keyboard_double_arrow_left,
-      Direction.right:Icons.keyboard_double_arrow_right,
-      Direction.top:Icons.keyboard_double_arrow_up,
-      Direction.bottom:Icons.keyboard_double_arrow_down,
+      EJoystickDirection.left:Icons.keyboard_double_arrow_left,
+      EJoystickDirection.right:Icons.keyboard_double_arrow_right,
+      EJoystickDirection.top:Icons.keyboard_double_arrow_up,
+      EJoystickDirection.bottom:Icons.keyboard_double_arrow_down,
     },
     this.iconSize = 24.0,
     this.iconColor = Colors.white,
@@ -54,10 +55,10 @@ class MJoystickSquireBase extends StatelessWidget {
     Color highlightColor = Colors.white,
 
     this.icons = const {
-      Direction.left: Icons.keyboard_double_arrow_left,
-      Direction.right: Icons.keyboard_double_arrow_right,
-      Direction.top: Icons.keyboard_double_arrow_up,
-      Direction.bottom: Icons.keyboard_double_arrow_down,
+      EJoystickDirection.left: Icons.keyboard_double_arrow_left,
+      EJoystickDirection.right: Icons.keyboard_double_arrow_right,
+      EJoystickDirection.top: Icons.keyboard_double_arrow_up,
+      EJoystickDirection.bottom: Icons.keyboard_double_arrow_down,
     },
     this.iconSize = 24.0,
     this.iconColor = Colors.white,
@@ -68,8 +69,8 @@ class MJoystickSquireBase extends StatelessWidget {
     this.outerBorderColor,
     this.outerBorderWidth = 1.0, //绘制的线的一半会被裁剪。
 
-  }) :baseColors = {Direction.left:baseColor,Direction.right:baseColor,Direction.top:baseColor,Direction.bottom:baseColor,Direction.center:centerBaseColor ?? baseColor,},
-  highlightColors = {Direction.left:highlightColor,Direction.right:highlightColor,Direction.top:highlightColor,Direction.bottom:highlightColor,Direction.center: centerHighlightColor??highlightColor},
+  }) :baseColors = {EJoystickDirection.left:baseColor,EJoystickDirection.right:baseColor,EJoystickDirection.top:baseColor,EJoystickDirection.bottom:baseColor,EJoystickDirection.center:centerBaseColor ?? baseColor,},
+  highlightColors = {EJoystickDirection.left:highlightColor,EJoystickDirection.right:highlightColor,EJoystickDirection.top:highlightColor,EJoystickDirection.bottom:highlightColor,EJoystickDirection.center: centerHighlightColor??highlightColor},
         trapezoidHeight = trapezoidHeightInput > size / 2 ? size / 2:trapezoidHeightInput;
         //assert(trapezoidHeight <= size / 2,'梯形高度不能超过边长的一半，否则中心区域会消失');
 
@@ -86,33 +87,33 @@ class MJoystickSquireBase extends StatelessWidget {
           children: [
             // ---------- 1. 五个背景色块（通过裁剪实现形状）----------
             _buildClippedRegion(
-              direction: Direction.top,
+              direction: EJoystickDirection.top,
               clipper: _TopClipper(trapezoidHeight: trapezoidHeight),
             ),
             _buildClippedRegion(
-              direction: Direction.bottom,
+              direction: EJoystickDirection.bottom,
               clipper: _BottomClipper(trapezoidHeight: trapezoidHeight),
             ),
             _buildClippedRegion(
-              direction: Direction.left,
+              direction: EJoystickDirection.left,
               clipper: _LeftClipper(trapezoidHeight: trapezoidHeight),
             ),
             _buildClippedRegion(
-              direction: Direction.right,
+              direction: EJoystickDirection.right,
               clipper: _RightClipper(trapezoidHeight: trapezoidHeight),
             ),
             _buildClippedRegion(
-              direction: Direction.center,
+              direction: EJoystickDirection.center,
               clipper: _CenterClipper(trapezoidHeight: trapezoidHeight),
             ),
 
             // ---------- 2. 方向图标（精确居中对齐）----------
-            _buildIcon(Direction.top)!,
-            _buildIcon(Direction.bottom)!,
-            _buildIcon(Direction.left)!,
-            _buildIcon(Direction.right)!,
-            if (icons.containsKey(Direction.center))
-              _buildIcon(Direction.center)!,
+            _buildIcon(EJoystickDirection.top)!,
+            _buildIcon(EJoystickDirection.bottom)!,
+            _buildIcon(EJoystickDirection.left)!,
+            _buildIcon(EJoystickDirection.right)!,
+            if (icons.containsKey(EJoystickDirection.center))
+              _buildIcon(EJoystickDirection.center)!,
 
             if (borderColor != null)
               CustomPaint(
@@ -142,7 +143,7 @@ class MJoystickSquireBase extends StatelessWidget {
 
   // 构建单个裁剪区域（背景色）
   Widget _buildClippedRegion({
-    required Direction direction,
+    required EJoystickDirection direction,
     required CustomClipper<Path> clipper,
   }) {
     final bool isHighlighted = highlighted[direction] ?? false;
@@ -169,7 +170,7 @@ class MJoystickSquireBase extends StatelessWidget {
   }
 
   // 构建单个方向图标
-  Widget? _buildIcon(Direction direction) {
+  Widget? _buildIcon(EJoystickDirection direction) {
     if (!icons.containsKey(direction)) return null;
     final Offset center = _regionCenter(direction);
     return Positioned(
@@ -186,45 +187,43 @@ class MJoystickSquireBase extends StatelessWidget {
   }
 
   // 计算各区域几何中心（用于放置图标）
-  Offset _regionCenter(Direction direction) {
+  Offset _regionCenter(EJoystickDirection direction) {
     final t = trapezoidHeight;
     final half = size / 2;
     switch (direction) {
-      case Direction.top:
+      case EJoystickDirection.top:
         return Offset(half, t * 0.5);
-      case Direction.bottom:
+      case EJoystickDirection.bottom:
         return Offset(half, size - t * 0.5);
-      case Direction.left:
+      case EJoystickDirection.left:
         return Offset(t * 0.5, half);
-      case Direction.right:
+      case EJoystickDirection.right:
         return Offset(size - t * 0.5, half);
-      case Direction.center:
+      case EJoystickDirection.center:
         return Offset(half, half);
     }
   }
 
   // 默认基础颜色（低饱和度灰）
-  Color _defaultBaseColor(Direction direction) => Colors.grey.shade800;
+  Color _defaultBaseColor(EJoystickDirection direction) => Colors.grey.shade800;
 
   // 默认高亮颜色（带透明度的主题色）
-  Color _defaultHighlightColor(Direction direction) {
+  Color _defaultHighlightColor(EJoystickDirection direction) {
     switch (direction) {
-      case Direction.top:
+      case EJoystickDirection.top:
         return Colors.blue.withOpacity(0.7);
-      case Direction.bottom:
+      case EJoystickDirection.bottom:
         return Colors.green.withOpacity(0.7);
-      case Direction.left:
+      case EJoystickDirection.left:
         return Colors.orange.withOpacity(0.7);
-      case Direction.right:
+      case EJoystickDirection.right:
         return Colors.purple.withOpacity(0.7);
-      case Direction.center:
+      case EJoystickDirection.center:
         return Colors.red.withOpacity(0.7);
     }
   }
 }
 
-// ---------- 方向枚举 ----------
-enum Direction { top, bottom, left, right, center }
 
 // ---------- 四个梯形 + 中心矩形的 Clipper ----------
 

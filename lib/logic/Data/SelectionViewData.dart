@@ -11,6 +11,28 @@ class SelectionViewData extends ChangeNotifier {
   ConceptNodeTree? _selectedConceptNode;
   ConceptNodeTree? get SelectedConceptNode =>_selectedConceptNode;
 
+  DomainTree? _tmpSelectedDomain;
+  DomainTree? get TmpSelectedDomain => _tmpSelectedDomain;
+  set TmpSelectedDomain(DomainTree? value){
+    if(_tmpSelectedDomain != value){
+      _tmpSelectedDomain = value;
+      notifyListeners();
+    }
+    if(value != null)
+      _tmpSelectedConcept = null;
+  }
+  ConceptNodeTree? _tmpSelectedConcept;
+  ConceptNodeTree? get TmpSelectedConceptNode =>_tmpSelectedConcept;
+  set TmpSelectedConceptNode(ConceptNodeTree? value){
+    if(_tmpSelectedConcept != value){
+      _tmpSelectedConcept = value;
+      notifyListeners();
+    }
+    if(value != null)
+      _tmpSelectedDomain = null;
+  }
+
+
   String get CurrentDomainNodeKey => IsInDomain? currentDomain : ConceptTreeModel.GenerateDomainNodeKey(currentDomain, currentConceptNodeName, currentConceptNodeAlias);
   bool get IsInDomain => currentConceptNodeName == "";
 
@@ -40,5 +62,6 @@ class SelectionViewData extends ChangeNotifier {
     _selectedConceptNode = null;
     notifyListeners();
   }
+
 }
 //选择某个节点。

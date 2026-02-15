@@ -134,7 +134,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
             nameErrorCheck(treeModel, selection, "");
 
             //选中新创建的节点。
-            stateModel.State = GlobalState.selectedDomain;
+            stateModel.State = GlobalState.editingDomain;
             selection.SelectedDomain = domain2Add;
             //聚焦新节点
             Size allSize = newDrawingData.nodeAppearance.nodeSize * newDrawingData.nodeAppearance.emptySize;

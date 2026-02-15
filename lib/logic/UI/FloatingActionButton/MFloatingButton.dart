@@ -36,7 +36,7 @@ class _MFloatingButtonState extends State<MFloatingButton> {
             FloatingActionButton(
               onPressed: () {
                 // 执行你希望的操作
-                stateModel.State = GlobalState.creatingNode;
+                stateModel.State = GlobalState.creatingConcept;
               },
               child: Icon(Icons.add),
               backgroundColor: Colors.green,
@@ -134,7 +134,7 @@ class _MFloatingButtonState extends State<MFloatingButton> {
             FloatingActionButton(
               onPressed: () {
                 // 执行你希望的操作
-                stateModel.State = GlobalState.creatingNode;
+                stateModel.State = GlobalState.creatingConcept;
               },
               child: Icon(Icons.add),
               backgroundColor: Colors.green,

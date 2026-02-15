@@ -2,11 +2,13 @@
 import 'dart:ui';
 
 import 'package:concept_navigator/MTools/UI/DebugUI.dart';
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
@@ -37,7 +39,10 @@ class LevelNode extends StatelessWidget {
     Size allSize = drawingData.nodeAppearance.nodeSize * drawingData.nodeAppearance.emptySize;
     SelectionViewData selection = context.watch<SelectionViewData>();
     AddressBarModel addressBarModel = context.watch<AddressBarModel>();
-    GlobalStateModel stateModel = context.watch<GlobalStateModel>();
+    GlobalStateModel globalStateModel = context.watch<GlobalStateModel>();
+    EditingStateModel editingStateModel = context.watch<EditingStateModel>();
+    NodeSwapModel swapModel = context.read<NodeSwapModel>();
+    CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
 
     ConceptTree2NodeViewDataDic nodeViewDic = context.read<ConceptTree2NodeViewDataDic>();
 
@@ -66,9 +71,40 @@ class LevelNode extends StatelessWidget {
               child: GestureDetector(
                 onTap: (){
                   print("clicked node ${nodeTree.name}");
+                  if(editingStateModel.State == EditingState.selectingMovingNode){
+                    //初始化自身坐标了。
+                    selection.SelectedConceptNode = nodeTree;
+                    globalStateModel.State = GlobalState.editingConcept;
+                    swapModel.initMoveData(selection);
+                    editingStateModel.State = EditingState.waitingMovingTarget;
+                    return;
+                  }
+                  else if(editingStateModel.State == EditingState.waitingMovingTarget){
+                    //自身与目标交换了！！！！
+                    int? index = swapModel.getNodeIndex(selection,childConceptTree: nodeTree,childDomainTree: null);
+                    if(index == null){
+                      throw Exception("LevelNode尝试通过NodeSwapModel找自身在父Tree的Index,但是失败了");
+                    }
+
+                    swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
+                    commandManager.moveNodeInstance.PushCommand(
+                      Command(
+                        function: (){
+                          swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
+
+                        },
+                        undoFunction: (){
+                          swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
+                        }
+                      )
+                    );
+                    //交换完过后，进入继续选择节点的状态。
+                    editingStateModel.State = EditingState.selectingMovingNode;
+                    return;
+                  }
 
                   selection.SelectedConceptNode = nodeTree;
-                  stateModel.State = GlobalState.selectedNode;
+                  globalStateModel.State = GlobalState.editingConcept;
 
                   focusNodeHelper.FocusNode(nodeTree, null);
                   //controller.stop();
@@ -82,7 +118,7 @@ class LevelNode extends StatelessWidget {
                   selection.CancelSelection();
                   selection.currentConceptNodeName = nodeTree!.name;
                   selection.currentConceptNodeAlias = nodeTree!.alias;
-                  stateModel.State = GlobalState.normal;
+                  globalStateModel.State = GlobalState.normal;
 
 
                 },

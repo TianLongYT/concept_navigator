@@ -9,21 +9,34 @@
 
 
 //外形设计。{模式}{模式}（激活摇杆）
+import 'package:concept_navigator/MTools/MMath.dart';
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
+import 'package:concept_navigator/logic/Data/ConceptTree.dart';
+import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
+import 'package:concept_navigator/logic/Data/GlobalState.dart';
+import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
+import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystick.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickBase.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickEnum.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickListener.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/DoubleActionButton.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/ScroallablePositionedList/ScrollablePositionedListItem.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
+import 'package:provider/provider.dart';
 
 class ConceptMoveComponent extends StatefulWidget {
-  ConceptMoveComponent({super.key});
+  const ConceptMoveComponent({super.key,this.needInit = false,});
+  final bool needInit;
 
   @override
   State<ConceptMoveComponent> createState() => _ConceptMoveComponentState();
 }
 
 class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
+
   //直接用数值代替状态枚举，没必要弄枚举折磨自己。
   //0 默认，1展开，。。。。。。
   double state = 0;
@@ -35,6 +48,22 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
   //1.3 交换模式： 左取消，右，确定
   //编辑状态下，聚焦节点，创建节点的FAB收缩。
   StlessScrollablePositionedListItem? inheritedItem;
+  MJoystickListenerHelper? listenerHelper;
+  bool leftEnter = false,rightEnter = false,topEnter = false,bottomEnter = false,centerEnter = true;
+  final double DeadZone = 0.45;
+
+  late CommandManagerForProvider commandManagerProvider;
+  late CommandManager commandManager;
+
+  late SelectionViewData selection;
+  //late ConceptTreeModel treeModel;
+  //ConceptNodeTree? nodeTree;
+  //DomainTree? domainTree;
+  //NodeDrawingData? nodeDrawingData;
+  //DomainDrawingData? domainDrawingData;
+
+  late NodeSwapModel swapModel;
+
 
   void _focusToCenter(BuildContext context){
     inheritedItem ??= context.dependOnInheritedWidgetOfExactType<StlessScrollablePositionedListItem>();
@@ -55,10 +84,204 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
     inheritedItem!.needStopScroll!(stop);
 
   }
+  void _onDirectionFirstEnter(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        setState(() {
+          leftEnter = true;
+          centerEnter = false;
+          //leftEnter = false;
+          rightEnter = false;
+          topEnter = false;
+          bottomEnter = false;
+        });
+        break;
+      case EJoystickDirection.right:
+        setState(() {
+          rightEnter = true;
+          centerEnter = false;
+          leftEnter = false;
+          //rightEnter = false;
+          topEnter = false;
+          bottomEnter = false;
+        });
+        break;
+      case EJoystickDirection.top:
+        setState(() {
+          topEnter = true;
+          centerEnter = false;
+          leftEnter = false;
+          rightEnter = false;
+          //topEnter = false;
+          bottomEnter = false;
+        });
+        //break;
+      case EJoystickDirection.bottom:
+        setState(() {
+          bottomEnter = true;
+          centerEnter = false;
+          leftEnter = false;
+          rightEnter = false;
+          topEnter = false;
+          //bottomEnter = false;
+        });
+        break;
+      default:
+        setState((){
+          centerEnter = true;
+          leftEnter = false;
+          rightEnter = false;
+          topEnter = false;
+          bottomEnter = false;
+        });
+        break;//dart里面默认会break Switch case。爱写不写。
+    }
+    if(selection.IsSelectedDomain){
+      if(mode == 1){
+        moveSwapDomain(direction);
+      }
+      else if(mode == 2){
+        moveSqueezeDomain(direction);
+      }
+    }
+    else if(selection.IsSelectedConceptNode){
+      if(mode == 1){
+        moveSwapConcept(direction);
+      }
+      else if(mode == 2){
+        moveSqueezeConcept(direction);
+      }
+    }
+
+  }
+  void _onDirectionRepeat(EJoystickDirection direction){
+    _onDirectionFirstEnter(direction);
+    print("Repeat!!!!!${direction}");
+  }
+
+  void initMoveData(){
+    commandManager.init();
+    swapModel.initMoveData(selection);
+  }
+  void confirmMoveData(){
+    //TODO:对节点完成编辑后，重新构建节点树。非常重要。
+  }
+
+  void moveSwapDomain(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        break;
+      case EJoystickDirection.right:
+        break;
+      case EJoystickDirection.top:
+        break;
+
+      case EJoystickDirection.bottom:
+        break;
+
+      default:
+        break;
+    }
+  }
+  void moveSqueezeDomain(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        break;
+      case EJoystickDirection.right:
+        break;
+      case EJoystickDirection.top:
+        break;
+
+      case EJoystickDirection.bottom:
+        break;
+
+      default:
+        break;
+    }
+  }
+  void moveSwapConcept(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        break;
+      case EJoystickDirection.right:
+
+        swapModel.reCalculateCurIndex(selection);
+        //1.当前位置与新位置交换。2.当前位置与起始位置交换。
+        int originIndex = swapModel.originIndex;
+        int curIndex = swapModel.curIndex;
+        int newIndex = curIndex + 1;
+        if(newIndex > swapModel.allLength - 1){
+          print("超量，无法移动${newIndex}");
+          //TODO:做一个节点向特定方向移动但被卡住的效果。但是会很耗。
+          return;
+        }
+        swapModel.nodeSwap(curIndex, newIndex, true,false);
+        swapModel.nodeSwap(curIndex, originIndex,true, false);
+        swapModel.rebuildNodeTreeDic();
+        print("移动节点，序号curIndex${curIndex},newIndex${newIndex},originInde${originIndex}");
+        commandManager.PushCommand(Command(function: (){
+          swapModel.nodeSwap(curIndex, newIndex, true,false);
+          swapModel.nodeSwap(curIndex, originIndex,true, false);
+        },undoFunction: (){
+          swapModel.nodeSwap(curIndex, originIndex,true, false);
+          swapModel.nodeSwap(curIndex, newIndex,true, false);
+        }));
+
+        break;
+      case EJoystickDirection.top:
+        break;
+
+      case EJoystickDirection.bottom:
+        break;
+
+      default:
+        break;
+    }
+  }
+  void moveSqueezeConcept(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        break;
+      case EJoystickDirection.right:
+        break;
+      case EJoystickDirection.top:
+        break;
+      case EJoystickDirection.bottom:
+        break;
+      default:
+        break;
+    }
+  }
 
 
   @override
+  void initState() {
+    listenerHelper = MJoystickListenerHelper(
+      //repeatDelay: Duration(milliseconds: 500),
+      onDirectionFirstEnter: _onDirectionFirstEnter,
+      deadZone: DeadZone,
+      onDirectionRepeat: _onDirectionRepeat,
+    );
+    //获取移动所必须的数据。
+    selection = context.read<SelectionViewData>();
+
+    commandManagerProvider = context.read<CommandManagerForProvider>();
+    commandManager = commandManagerProvider.moveNodeInstance;
+
+    swapModel = context.read<NodeSwapModel>();
+
+    super.initState();
+  }
+  @override
+  void dispose() {
+    listenerHelper?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    //final GlobalStateModel stateModel = context.read<GlobalStateModel>();
+    final EditingStateModel stateModel = context.read<EditingStateModel>();
     //state = 0;
     // 为了方便演示，先硬编码 size，你可以根据需要提取为常量
     final double joystickSize = 190;          // 摇杆完全展开时的尺寸
@@ -66,11 +289,13 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
     final double buttonBigHeight = 56;        // 双按钮形态0时的高度
     final double buttonSmallWidth = 150;      // 双按钮形态1时的宽度
     final double buttonSmallHeight = 56;      // 双按钮形态1时的高度
-    //TODO:删掉他们，就两个widget，直接从左算到右就行。
-    // 获取屏幕/父容器尺寸（假设Stack填满父布局）
-    // final Size screenSize = MediaQuery.of(context).size;
-    // final double centerX = screenSize.width / 2;
-    // final double centerY = screenSize.height / 5;
+    print("重新构建NodeMoveComponent");
+    if(widget.needInit){
+      print("因为Selection改变，调用初始化方法");
+
+      initMoveData();
+    }
+
 
     // 形态1时双按钮靠右偏移，在左边按钮的右20像素。
     final double rightX = joystickSize +10;
@@ -78,11 +303,11 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: double.infinity,
-      height: state == 1?joystickSize:buttonBigHeight,
+      height: state == 1 ?(mode == 2? joystickSize:2*buttonBigHeight):buttonBigHeight,
       child: Stack(
         children: [
           AnimatedPositioned(
-            left: state == 1 ? 0 : -joystickSize, // 移出屏幕左侧
+            left: state == 1 && mode == 2 ? 0 : -joystickSize, // 移出屏幕左侧
             top: state == 0 ? 0:0,
             //width: state == 1 ? joystickSize : 0,
             //height: state == 1 ? joystickSize : 0,
@@ -91,9 +316,8 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
             child: Joystick(
               //key: _joystickKey,
 
-              listener: (drageDetail){
-
-              },
+              listener: listenerHelper!.listener,
+              period: Duration(milliseconds: 50),
               // base: JoystickSquareBase(
               //   mode: JoystickMode.horizontalAndVertical,
               //   size: 100*value + 100,
@@ -105,16 +329,16 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
               base: MJoystickSquireBase.all(
                 animationDuration: Duration(milliseconds: 100),
                 size: joystickSize,
-                trapezoidHeightInput: 45,
+                trapezoidHeightInput: joystickSize * (1 - DeadZone) * 0.5,
                 highlighted: {
-                  Direction.left:true,
-                  Direction.right:false,
-                  Direction.top:false,
-                  Direction.bottom:false,
-                  Direction.center:false,
+                  EJoystickDirection.left:leftEnter,
+                  EJoystickDirection.right:rightEnter,
+                  EJoystickDirection.top:topEnter,
+                  EJoystickDirection.bottom:bottomEnter,
+                  EJoystickDirection.center:centerEnter,
                 },
                 centerBaseColor: Theme.of(context).colorScheme.surfaceContainer,
-                centerHighlightColor: Theme.of(context).colorScheme.surfaceContainer,
+                centerHighlightColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                 baseColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 highlightColor: Theme.of(context).colorScheme.tertiary,
                 borderColor: Theme.of(context).colorScheme.outline,
@@ -146,10 +370,10 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
           ),
 
           AnimatedPositioned(
-            left: state == 0 ? 0 : rightX,
-            top: state == 0 ? 0 : 20,
-            bottom: state == 0? 0:null,
-            right: state == 0? 0: null,
+            left: state == 1 && mode == 2 ? rightX : 0,
+            top: state == 1 && mode == 2 ? 20 : 0,
+            bottom: state == 1 && mode == 2 ? null:0,
+            right: state == 1 && mode == 2 ? null: 0,
 
 
             duration: const Duration(milliseconds: 100),
@@ -158,10 +382,17 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
             child: Align(
               alignment: AlignmentGeometry.topCenter,
               child: DoubleActionButton(
-                width: state == 0 ? buttonBigWidth : buttonSmallWidth,
-                height: state == 0 ? buttonBigHeight : buttonSmallHeight,
+                width: state == 1 && mode == 2 ?  buttonSmallWidth : buttonBigWidth,
+                height: state == 1 && mode == 2 ? buttonSmallHeight : buttonBigHeight,
                 onLeftPressed:mode == 1? null: (){
                   //print("PressLeft");
+                  if(selection.IsSelecting){
+                    stateModel.State = EditingState.waitingMovingTarget;
+                  }
+                  else{
+                    stateModel.State = EditingState.selectingMovingNode;
+                  }
+                  initMoveData();
                   if(state == 0){
                     //进入交换移动模式。
                     _focusToCenter(context);
@@ -178,6 +409,13 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
                   }
                 },
                 onRightPressed:mode == 2?null: (){
+                  if(selection.IsSelecting){
+                    stateModel.State = EditingState.waitingMovingTarget;
+                  }
+                  else{
+                    stateModel.State = EditingState.selectingMovingNode;
+                  }
+                  initMoveData();
                   if(state == 0){
                     //进入挤兑移动模式。
                     _focusToCenter(context);
@@ -221,10 +459,10 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
             ),
           ),
           AnimatedPositioned(
-            left: state == 0 ? 0 : rightX,
-            top: state == 0 ? 0 : 22+buttonSmallHeight,
-            bottom: state == 0? 0:null,
-            right: state == 0? 0: null,
+            left: state == 1 && mode == 2 ? rightX : 0,
+            top: state == 0 ? 0 :(mode == 2? 22+buttonSmallHeight : buttonBigHeight),
+            bottom: state == 1 && mode == 2 ? null:0,
+            right: state == 1 && mode == 2 ? null: 0,
 
 
             duration: const Duration(milliseconds: 100),
@@ -233,13 +471,14 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
             child: Align(
               alignment: AlignmentGeometry.topCenter,
               child: DoubleActionButton(
-                width: state == 0 ? 0 : buttonSmallWidth,
-                height: state == 0 ? 0 : buttonSmallHeight,
+                width: state == 1 ? (mode == 2? buttonSmallWidth : buttonBigWidth) : 0,
+                height: state == 1  ?(mode == 2 ?buttonSmallHeight : buttonBigHeight)  : 0,
                 onLeftPressed: (){
                   //print("PressLeft");确定按钮
                   if(state == 0){
                     return;
                   }
+                  stateModel.State = EditingState.none;
                   _announceScroll(false);
                   setState(() {
                     state = 0;
@@ -252,6 +491,7 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
                     return;
                   }
                   // 取消编辑。
+                  stateModel.State = EditingState.none;
                   _announceScroll(false);
                   setState(() {
                     state = 0;

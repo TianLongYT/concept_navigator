@@ -1,19 +1,39 @@
+import 'dart:collection';
 import 'package:flutter/material.dart';
 
-enum GlobalState{
-  normal,
-  creatingNode,
-  creatingDomain,
-  selectedNode,
-  selectedDomain,
-  
-}
-class GlobalStateModel extends ChangeNotifier {
-  GlobalState _state = GlobalState.normal;
-  GlobalState get State => _state;
-  set State (value) {
+abstract class StateModel<T extends Enum> extends ChangeNotifier {
+  T _state;
+
+  StateModel(T initialState) : _state = initialState;
+
+  T get State => _state;
+
+  set State(T value) {
     _state = value;
     notifyListeners();
   }
+}
+enum GlobalState{
+  normal,
+  creatingConcept,
+  creatingDomain,
+  editingConcept,
+  editingDomain,
+}
+
+class GlobalStateModel extends StateModel<GlobalState> {
+  GlobalStateModel():super(GlobalState.normal);
+  //List<GlobalState> stateList = [];
+}
+enum EditingState{
+  none,
+  renamingNode,
+
+  selectingMovingNode,
+  waitingMovingTarget,
+
+}
+class EditingStateModel extends StateModel<EditingState>{
+  EditingStateModel():super(EditingState.none);
 
 }
