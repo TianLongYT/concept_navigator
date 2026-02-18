@@ -31,7 +31,7 @@ class ConceptErrorCheck{
     if(StringConflictCheck.CheckContainList(textValue, ConceptTreeModel.ErrorPatten)){
       return "命名中不能连续出现'/'和'_'字符";
     }
-    if(treeModel.ContainConceptNode(ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, textValue, alias))){
+    if(treeModel.ContainConceptNodeNameAlias(ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, textValue, alias))){
       return "同一域内不允许出现名字和别名都相同的概念";
     }
     return null;
@@ -40,7 +40,7 @@ class ConceptErrorCheck{
     if(StringConflictCheck.CheckContainList(name, ConceptTreeModel.ErrorPatten)){
       return "命名中不能连续出现'/'和'_'字符";
     }
-    if(treeModel.ContainConceptNode(ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, name, textValue))){
+    if(treeModel.ContainConceptNodeNameAlias(ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, name, textValue))){
       return "同一域内不允许出现名字和别名都相同的概念";
     }
     return null;

@@ -137,6 +137,7 @@ class ConceptTreeModel extends ChangeNotifier{
     }
   }
   _GenerateDicNode(String domainKey,ConceptNodeTree nodeTree){
+    nodeTree.domainKey = domainKey;
     String key = GenerateDomainNodeKey(domainKey, nodeTree.name, nodeTree.alias);
     if(domainNodeKey2ConceptTree.containsKey(key)){
       return;
@@ -152,6 +153,16 @@ class ConceptTreeModel extends ChangeNotifier{
   static String GenerateDomainNodeKey(String domain,String name,String alias){
     return domain+AppendOperator+AppendOperator+name+AppendOperator+alias;
   }
+  static String GenerateDomainNodeKeyNA(String domain,String nameAlias){
+    return domain+AppendOperator+AppendOperator+nameAlias;
+  }
+  static List<String> SplitDomainNodeKeyOutNodeNameAlias(String domainNodeKey){
+    List<String> tmpList = domainNodeKey.split(AppendOperator+AppendOperator);
+    if(tmpList.length != 2){
+      throw Exception("无法分离该domainNodeKey:$domainNodeKey");
+    }
+    return tmpList[1].split(AppendOperator);
+  }
   static String AppendDomainKey(String domainKey,String domainOrdomainKey){
     return domainKey + AppendOperator + domainOrdomainKey;
   }
@@ -160,6 +171,60 @@ class ConceptTreeModel extends ChangeNotifier{
   }
   static String DomainNodeKey2DomainKey(String domainNodeKey){
     return domainNodeKey.split(AppendOperator+AppendOperator).first;
+  }
+  static bool domainKeyContainEqual(String longDomainNodeKey,String shortDomainKey){
+    assert(shortDomainKey.split(AppendOperator + AppendOperator).length != 1,
+    "domainKeyContain传入的shortDomainkey必须是domainKey,而不能是domainNodeKey");
+    List<String> tmpList = longDomainNodeKey.split(AppendOperator+AppendOperator);
+    String longDomainKey = longDomainNodeKey;
+    if(tmpList.length == 2){
+      longDomainKey = tmpList.first;
+    }
+    List<String> keys1 = SplitDomainKey(longDomainKey);
+    List<String> keys2 = SplitDomainKey(shortDomainKey);
+    if(keys1.length < keys2.length){
+      return false;
+    }
+    for(int i = 0;i<keys2.length;i++){
+      if(keys1[i] != keys2[i]){
+        return false;
+      }
+    }
+    return true;
+  }
+  static String? replaceDomainKey(String longDomainNodeKey,String shortDomainKey,String newDomainName){
+    assert(shortDomainKey.split(AppendOperator + AppendOperator).length == 1,
+    "domainKeyContain传入的shortDomainkey必须是domainKey,而不能是domainNodeKey,shortDomainKey:$shortDomainKey,splitLength${shortDomainKey.split(AppendOperator + AppendOperator).length}");
+    List<String> tmpList = longDomainNodeKey.split(AppendOperator+AppendOperator);
+    String longDomainKey = longDomainNodeKey;
+    String longDomainNameAlias = "";
+    if(tmpList.length == 2){
+      longDomainKey = tmpList.first;
+      longDomainNameAlias = tmpList.last;
+    }
+    List<String> keys1 = SplitDomainKey(longDomainKey);
+    List<String> keys2 = SplitDomainKey(shortDomainKey);
+    print("longDomainNodeKey:$longDomainNodeKey,shrotDomainKey:$shortDomainKey,keys1:$keys1,keys2:$keys2,longDomainKey:$longDomainKey,longdomainNameAlias:$longDomainNameAlias");
+    if(keys1.length < keys2.length){
+      return null;
+    }
+    for(int i = 0;i<keys2.length;i++){
+      if(keys1[i] != keys2[i]){
+        print("交换失败,发现Keys1:${keys1[i]}!=${keys2[i]}");
+        return null;
+      }
+    }
+    print("成功交换，原本${keys1[keys2.length - 1]},换成${newDomainName},");
+    keys1[keys2.length - 1] = newDomainName;
+    String replacedDomainKey = keys1[0];
+    for(int i = 1;i < keys1.length;i++){
+      replacedDomainKey = AppendDomainKey(replacedDomainKey, keys1[i]);
+    }
+    if(longDomainNameAlias != ""){
+      replacedDomainKey = GenerateDomainNodeKeyNA(replacedDomainKey, longDomainNameAlias);
+    }
+
+    return replacedDomainKey;
   }
 
   //通过字典获取节点树
@@ -243,6 +308,14 @@ class ConceptTreeModel extends ChangeNotifier{
     return false;
   }
   bool ContainConceptNode(String domainNodeKey){
+    return domainNodeKey2ConceptTree.containsKey(domainNodeKey);
+  }
+  bool ContainConceptNodeNameAlias(String domainNodeKey){
+    var tmpList = SplitDomainNodeKeyOutNodeNameAlias(domainNodeKey);
+    print("alias：${tmpList[1]}");
+    if(tmpList[1] == ""){
+      return false;
+    }
     return domainNodeKey2ConceptTree.containsKey(domainNodeKey);
   }
 

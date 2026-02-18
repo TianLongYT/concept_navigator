@@ -124,8 +124,8 @@ class _NodepanelState extends State<Nodepanel> {
     final Widget bgContainer = GestureDetector(//手势识别会进行冲突判断，且一次仅有一个手势可以被执行。
         onTap: (){
           print("onTap");
-          if(editingStateModel.State == EditingState.waitingMovingTarget){
-            globalStateModel.State = GlobalState.normal;
+          if(editingStateModel.State == EditingState.waitingMovingTarget || editingStateModel.State == EditingState.selectingMovingNode){
+            //globalStateModel.State = GlobalState.normal;
             return;
           }
 
@@ -209,20 +209,24 @@ class _NodepanelState extends State<Nodepanel> {
                   ...domainTree!.children.asMap().entries.map((nodeTreeMap){
 
                     Offset position = nodePositionHelper.GetNodePositionByIndex(true, nodeTreeMap.key);
-                    DomainDrawingData drawingData= nodePositionHelper.childDomainDrawingData!;
-                    Size nodeSize = nodePositionHelper.nodeSize! * scale;
+                    //DomainDrawingData drawingData= nodePositionHelper.childDomainDrawingData!;
+                    //Size nodeSize = nodePositionHelper.nodeSize! * scale;
 
                     return AnimatedPositioned(
-                      left : position.dx *scale +nodeViewData.viewPosX*scale,
-                      top :  position.dy *scale + nodeViewData.viewPosY*scale ,
-                      duration: Duration(milliseconds: 100),
+                      key: Key(nodeTreeMap.value.hashCode.toString()),
+                      left : position.dx *scale + centerLeft,
+                      top :  position.dy *scale + centerTop,
+                      duration: isScaling? Duration(milliseconds: 0): Duration(milliseconds: 200),
                       curve: Curves.easeOut,
 
-                      child:SizedBox(
-                          width: nodeSize.width,
-                          height:  nodeSize.height,
-                          child:
-                          LevelDomain(scale: scale, drawingData: drawingData, domainTree: nodeTreeMap.value!,parentNodeTree: domainTree,)
+                      child:Transform.translate(
+                        offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
+                        child: LevelDomain(
+                          scale: scale,
+                          drawingData: nodePositionHelper.childDomainDrawingData!,
+                          domainTree: nodeTreeMap.value!,
+                          parentNodeTree: domainTree,
+                        ),
                       ),
 
 
@@ -240,7 +244,7 @@ class _NodepanelState extends State<Nodepanel> {
                     //print("AnimatedPos!!!!!!!!!!!!!!${ position.dx * scale +nodeViewData.viewPosX * scale}");
 
                     return AnimatedPositioned(
-                      key: Key(nodePositionHelper.childNodeDrawingData!.text),//不考虑性能。直接来罢！为了能成功交换节点而制作的。
+                      key: Key(nodeTreeMap.value.hashCode.toString()),//不考虑性能。直接来罢！为了能成功交换节点而制作的。
                       left : position.dx * scale  + centerLeft,
                       top : position.dy * scale  + centerTop,
                       duration: isScaling? Duration(milliseconds: 0): Duration(milliseconds: 200),
@@ -266,15 +270,19 @@ class _NodepanelState extends State<Nodepanel> {
                 Offset position = nodePositionHelper.GetNodePositionByIndex(false, nodeTreeMap.key);
 
                 return AnimatedPositioned(
-                  left : position.dx * scale + nodeViewData.viewPosX * scale + centerLeft,
-                  top : position.dy * scale + nodeViewData.viewPosY * scale + centerTop,
-                  duration: Duration(milliseconds: 100),
-
-                  child: LevelNode(
-                    scale: scale,
-                    drawingData: nodePositionHelper.childNodeDrawingData!,
-                    nodeTree: nodeTreeMap.value!,
-                    parentNodeTree: nodeTree,
+                  key: Key(nodeTreeMap.value.hashCode.toString()),
+                  left : position.dx * scale + centerLeft,
+                  top : position.dy * scale + centerTop,
+                  duration: isScaling? Duration(milliseconds: 0): Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: Transform.translate(
+                    offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
+                    child: LevelNode(
+                      scale: scale,
+                      drawingData: nodePositionHelper.childNodeDrawingData!,
+                      nodeTree: nodeTreeMap.value!,
+                      parentNodeTree: nodeTree,
+                    ),
                   ),
 
                 );

@@ -4,6 +4,7 @@ import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickEnum.dart';
 import 'package:flutter/material.dart';
 
 
@@ -172,6 +173,26 @@ class NodeSwapModel{
       }
     }
     return null;
+  }
+  int getDeltaIndex(SelectionViewData selection,EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        return -1;
+      case EJoystickDirection.right:
+        return 1;
+      case EJoystickDirection.center:
+        return 0;
+      default:
+        int maxX = selection.IsInDomain?(selection.IsSelecting?(selection.IsSelectedConceptNode?domainDrawingData!.maxX:domainDrawingData!.domainMaxX):0):nodeDrawingData!.maxX;
+        if(direction == EJoystickDirection.top){
+          return -maxX;
+        }
+        else if(direction == EJoystickDirection.bottom){
+          return maxX;
+        }
+        return 0;
+    }
+
   }
   void nodeSwap(int index1,int index2,bool isInDomain,bool isDomain){
     if(index1 == index2)return;

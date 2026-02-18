@@ -7,6 +7,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/Data/StatefulComponentManagerModel.dart';
 import 'package:concept_navigator/logic/MainMenu.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AddressBarModel>(create: (_)=>AddressBarModel()),
         ChangeNotifierProvider<CommandManagerForProvider>(create: (_)=>CommandManagerForProvider()),
 
+        ChangeNotifierProvider<StatefulComponentManagerModelForProvider>(create: (_)=>StatefulComponentManagerModelForProvider(),),
+
         ProxyProvider0<NodeSwapModel>(
           create: (_)=>NodeSwapModel(),
           update: (BuildContext context, NodeSwapModel? value) {
@@ -51,7 +54,7 @@ class MyApp extends StatelessWidget {
             }
             return value..updateTree(context, context.watch<SelectionViewData>(),context.watch<ConceptTreeModel>(),context.watch<ConceptTree2DomainDrawingDataDic>(),context.watch<ConceptTree2NodeDrawingDataDic>());
           },
-        )
+        ),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',

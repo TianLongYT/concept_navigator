@@ -31,6 +31,7 @@ enum EditingState{
 
   selectingMovingNode,
   waitingMovingTarget,
+  squeezingNode,
 
 }
 class EditingStateModel extends StateModel<EditingState>{

@@ -28,7 +28,6 @@ class GapBorderContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-
     return CustomPaint(
       painter: _GapBorderPainter(
         label: decoration.label,
@@ -39,6 +38,7 @@ class GapBorderContainer extends StatelessWidget {
         gapAlignment: decoration.labelGapAlignment,
         context: context,
       ),
+      //size: Size(10, 100),
       child: Padding(
         padding: !ignoreBorderWidth && decoration.borderSide != null? EdgeInsetsGeometry.all(decoration.borderSide!.width).add(contentPadding):contentPadding , // 内容内边距
         child: child,

@@ -84,6 +84,10 @@ class CommandManager{
     PushCommand(command);
     redoAll();
   }
+  @override
+  String toString() {
+    return "commandStack:"+ commandStack.toString() +"  poppedCommandStack:"+ poppedCommandStack.toString();
+  }
 
 }
 
@@ -106,39 +110,43 @@ class SingletonCommandManager extends CommandManager{
 
 class CommandManagerForProvider extends ChangeNotifier{
   CommandManagerForProvider():
-    _editInstance = CommandManager(),
+    editInstance = CommandManager(),
     naviInstance = CommandManager(),
     moveNodeInstance = CommandManager();
 
 
 
-  final CommandManager _editInstance;//使用主方法会通知监听的widget。
+  final CommandManager editInstance;//使用主方法会通知监听的widget。
 
-  final CommandManager naviInstance;
+  final CommandManager naviInstance;//使用具体的子方法就不会调用notifier。这样可以适当优化。
   final CommandManager moveNodeInstance;//其他只起辅助作用。
 
-  bool get HasCommand =>_editInstance.HasCommand;
-  bool get HasPoppedCommand => _editInstance.HasPoppedCommand;
+  bool HasCommand(CommandManager commandManager)=>commandManager.HasCommand;
+  bool HasPoppedCommand(CommandManager commandManager)=>commandManager.HasPoppedCommand;
 
-  void PushCommand(Command command){
-    _editInstance.PushCommand(command);
+  //bool get HasCommand =>editInstance.HasCommand;
+  //bool get HasPoppedCommand => editInstance.HasPoppedCommand;
+
+  void PushCommand(CommandManager commandManager,Command command){
+    commandManager.PushCommand(command);
     notifyListeners();
   }
-  Command? PopCommand(){
+  Command? PopCommand(CommandManager commandManager){
     notifyListeners();
-    return _editInstance.PopCommand();
+    return commandManager.PopCommand();
   }
 
-  void Undo(){
-    _editInstance.Undo();
+  void Undo(CommandManager commandManager){
+    commandManager.Undo();
     notifyListeners();
   }
-  void Redo(){
-    _editInstance.Redo();
+  void Redo(CommandManager commandManager){
+    commandManager.Redo();
     notifyListeners();
   }
-
-
+  void printCommandManager(CommandManager commandManager){
+    print(commandManager.toString());
+  }
 }
 
 

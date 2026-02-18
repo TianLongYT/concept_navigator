@@ -5,6 +5,13 @@ import 'package:flutter/material.dart';
 
 class ConceptTree2NodeDrawingDataDic extends ChangeNotifier{
   Map<String,NodeDrawingData> _name2NodeDrawingData = {};
+  void ChangeKeys(String Function(String) rule){
+    _name2NodeDrawingData = {
+      for(var entry in _name2NodeDrawingData.entries)
+        rule(entry.key) : entry.value
+    };
+    notifyListeners();
+  }
   NodeDrawingData? GetNodeDrawingData(String domainNodeNameKey){
     if(_name2NodeDrawingData.containsKey(domainNodeNameKey)){
       return _name2NodeDrawingData[domainNodeNameKey];
@@ -33,6 +40,13 @@ class ConceptTree2NodeDrawingDataDic extends ChangeNotifier{
 
 class ConceptTree2DomainDrawingDataDic extends ChangeNotifier{
   Map<String,DomainDrawingData> _name2DomainDrawingData = {"root":DomainDrawingData(nodeAppearance: NodeAppearance())};
+  void ChangeKeys(String Function(String) rule){
+    _name2DomainDrawingData = {
+      for(var entry in _name2DomainDrawingData.entries)
+        rule(entry.key) : entry.value
+    };
+    notifyListeners();
+  }
   DomainDrawingData? GetDomainDrawingData(String domainNameKey){
     if(_name2DomainDrawingData.containsKey(domainNameKey)){
       return _name2DomainDrawingData[domainNameKey];
@@ -52,6 +66,13 @@ class ConceptTree2DomainDrawingDataDic extends ChangeNotifier{
 }
 class ConceptTree2NodeViewDataDic extends ChangeNotifier{
   Map<String,NodeViewData> _name2NodeViewData = {"root":NodeViewData()};
+  void ChangeKeys(String Function(String) rule){
+    _name2NodeViewData = {
+      for(var entry in _name2NodeViewData.entries)
+        rule(entry.key) : entry.value
+    };
+    notifyListeners();
+  }
   NodeViewData? GetNodeViewData(String domainNodeNameKey){
     if(_name2NodeViewData.containsKey(domainNodeNameKey)){
       return _name2NodeViewData[domainNodeNameKey];

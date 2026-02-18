@@ -17,6 +17,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/Data/StatefulComponentManagerModel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystick.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickBase.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveJoystick/MJoystickEnum.dart';
@@ -28,8 +29,8 @@ import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:provider/provider.dart';
 
 class ConceptMoveComponent extends StatefulWidget {
-  const ConceptMoveComponent({super.key,this.needInit = false,});
-  final bool needInit;
+  const ConceptMoveComponent({super.key,});
+  //final bool needInit;
 
   @override
   State<ConceptMoveComponent> createState() => _ConceptMoveComponentState();
@@ -63,6 +64,9 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
   //DomainDrawingData? domainDrawingData;
 
   late NodeSwapModel swapModel;
+  late EditingStateModel stateModel;
+  late StatefulComponentManagerModelForProvider statefulComponentManagerModelForProvider;
+
 
 
   void _focusToCenter(BuildContext context){
@@ -82,9 +86,17 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
       return;
     }
     inheritedItem!.needStopScroll!(stop);
+    //设置一下state（没什么卵用）
+    if(stop){
+      statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 2);
+    }
+    else{
+      statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 0);
+    }
 
   }
   void _onDirectionFirstEnter(EJoystickDirection direction){
+    print("directionFirstEnter!");
     switch(direction){
       case EJoystickDirection.left:
         setState(() {
@@ -136,19 +148,24 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
         });
         break;//dart里面默认会break Switch case。爱写不写。
     }
+    if(direction == EJoystickDirection.center){
+      return;
+    }
     if(selection.IsSelectedDomain){
-      if(mode == 1){
-        moveSwapDomain(direction);
-      }
-      else if(mode == 2){
+      // if(mode == 1){
+      //   moveSwapDomain(direction);
+      // }
+      // else
+        if(mode == 2){
         moveSqueezeDomain(direction);
       }
     }
     else if(selection.IsSelectedConceptNode){
-      if(mode == 1){
-        moveSwapConcept(direction);
-      }
-      else if(mode == 2){
+      // if(mode == 1){
+      //   moveSwapConcept(direction);
+      // }
+      // else
+        if(mode == 2){
         moveSqueezeConcept(direction);
       }
     }
@@ -166,7 +183,7 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
   void confirmMoveData(){
     //TODO:对节点完成编辑后，重新构建节点树。非常重要。
   }
-
+/*
   void moveSwapDomain(EJoystickDirection direction){
     switch(direction){
       case EJoystickDirection.left:
@@ -183,6 +200,28 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
         break;
     }
   }
+
+  void moveSwapConcept(EJoystickDirection direction){
+    switch(direction){
+      case EJoystickDirection.left:
+        break;
+      case EJoystickDirection.right:
+
+
+
+        break;
+      case EJoystickDirection.top:
+        break;
+
+      case EJoystickDirection.bottom:
+        break;
+
+      default:
+        break;
+    }
+  }
+
+ */
   void moveSqueezeDomain(EJoystickDirection direction){
     switch(direction){
       case EJoystickDirection.left:
@@ -199,60 +238,30 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
         break;
     }
   }
-  void moveSwapConcept(EJoystickDirection direction){
-    switch(direction){
-      case EJoystickDirection.left:
-        break;
-      case EJoystickDirection.right:
-
-        swapModel.reCalculateCurIndex(selection);
-        //1.当前位置与新位置交换。2.当前位置与起始位置交换。
-        int originIndex = swapModel.originIndex;
-        int curIndex = swapModel.curIndex;
-        int newIndex = curIndex + 1;
-        if(newIndex > swapModel.allLength - 1){
-          print("超量，无法移动${newIndex}");
-          //TODO:做一个节点向特定方向移动但被卡住的效果。但是会很耗。
-          return;
-        }
-        swapModel.nodeSwap(curIndex, newIndex, true,false);
-        swapModel.nodeSwap(curIndex, originIndex,true, false);
-        swapModel.rebuildNodeTreeDic();
-        print("移动节点，序号curIndex${curIndex},newIndex${newIndex},originInde${originIndex}");
-        commandManager.PushCommand(Command(function: (){
-          swapModel.nodeSwap(curIndex, newIndex, true,false);
-          swapModel.nodeSwap(curIndex, originIndex,true, false);
-        },undoFunction: (){
-          swapModel.nodeSwap(curIndex, originIndex,true, false);
-          swapModel.nodeSwap(curIndex, newIndex,true, false);
-        }));
-
-        break;
-      case EJoystickDirection.top:
-        break;
-
-      case EJoystickDirection.bottom:
-        break;
-
-      default:
-        break;
-    }
-  }
   void moveSqueezeConcept(EJoystickDirection direction){
-    switch(direction){
-      case EJoystickDirection.left:
-        break;
-      case EJoystickDirection.right:
-        break;
-      case EJoystickDirection.top:
-        break;
-      case EJoystickDirection.bottom:
-        break;
-      default:
-        break;
-    }
-  }
+    //将当前位置与目标位置进行交换。
+    swapModel.reCalculateCurIndex(selection);
+    //int originIndex = swapModel.originIndex;
+    int curIndex = swapModel.curIndex;
+    int newIndex = curIndex;
+    newIndex = newIndex + swapModel.getDeltaIndex(selection, direction);
 
+    if(newIndex > swapModel.allLength - 1 || newIndex < 0){
+      //TODO:做一个节点向特定方向移动但被卡住的效果。但是会很耗。
+      print("在最边缘怎么移动？${newIndex}");
+      return;
+    }
+    swapModel.nodeSwap(curIndex, newIndex, true,false);
+    swapModel.rebuildNodeTreeDic();
+    print("移动节点，序号curIndex${curIndex},newIndex${newIndex}");
+    commandManagerProvider.PushCommand(commandManager,Command(function: (){
+      swapModel.nodeSwap(curIndex, newIndex, true,false);
+      swapModel.rebuildNodeTreeDic();
+    },undoFunction: (){
+      swapModel.nodeSwap(curIndex, newIndex,true, false);
+      swapModel.rebuildNodeTreeDic();
+    }));
+  }
 
   @override
   void initState() {
@@ -269,41 +278,46 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
     commandManager = commandManagerProvider.moveNodeInstance;
 
     swapModel = context.read<NodeSwapModel>();
+    print("initStateNodeMoveComponent");
+    stateModel = context.read<EditingStateModel>();
+
+    statefulComponentManagerModelForProvider = context.read<StatefulComponentManagerModelForProvider>();
 
     super.initState();
   }
   @override
   void dispose() {
+    print("disposeNodeMoveComponent");
     listenerHelper?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    //final GlobalStateModel stateModel = context.read<GlobalStateModel>();
-    final EditingStateModel stateModel = context.read<EditingStateModel>();
-    //state = 0;
+    // if(stateModel.State == EditingState.waitingMovingTarget || stateModel.State == EditingState.selectingMovingNode){
+    //   if(state == 0){
+    //     state = 1;
+    //     mode = 1;
+    //     _announceScroll(true);
+    //     _focusToCenter(context);
+    //   }
+    // }
     // 为了方便演示，先硬编码 size，你可以根据需要提取为常量
     final double joystickSize = 190;          // 摇杆完全展开时的尺寸
     final double buttonBigWidth = 250;        // 双按钮形态0时的宽度
     final double buttonBigHeight = 56;        // 双按钮形态0时的高度
     final double buttonSmallWidth = 150;      // 双按钮形态1时的宽度
     final double buttonSmallHeight = 56;      // 双按钮形态1时的高度
-    print("重新构建NodeMoveComponent");
-    if(widget.needInit){
-      print("因为Selection改变，调用初始化方法");
-
-      initMoveData();
-    }
 
 
     // 形态1时双按钮靠右偏移，在左边按钮的右20像素。
     final double rightX = joystickSize +10;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 200),
       width: double.infinity,
       height: state == 1 ?(mode == 2? joystickSize:2*buttonBigHeight):buttonBigHeight,
+
       child: Stack(
         children: [
           AnimatedPositioned(
@@ -368,7 +382,6 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
               includeInitialAnimation: false,
             ),
           ),
-
           AnimatedPositioned(
             left: state == 1 && mode == 2 ? rightX : 0,
             top: state == 1 && mode == 2 ? 20 : 0,
@@ -395,8 +408,13 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
                   initMoveData();
                   if(state == 0){
                     //进入交换移动模式。
-                    _focusToCenter(context);
                     _announceScroll(true);
+                    WidgetsBinding.instance.addPostFrameCallback((_){
+                      Future.delayed(Duration.zero,(){
+                        _focusToCenter(context);
+                      });
+                    });
+                    _focusToCenter(context);
                     setState(() {
                       state = 1;
                       mode = 1;
@@ -409,17 +427,17 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
                   }
                 },
                 onRightPressed:mode == 2?null: (){
-                  if(selection.IsSelecting){
-                    stateModel.State = EditingState.waitingMovingTarget;
-                  }
-                  else{
-                    stateModel.State = EditingState.selectingMovingNode;
-                  }
+                  stateModel.State = EditingState.squeezingNode;
                   initMoveData();
                   if(state == 0){
                     //进入挤兑移动模式。
-                    _focusToCenter(context);
                     _announceScroll(true);
+
+                    WidgetsBinding.instance.addPostFrameCallback((_){
+                      Future.delayed(Duration.zero,(){
+                        _focusToCenter(context);
+                      });
+                    });
                     setState(() {
                       state = 1;
                       mode = 2;
@@ -491,6 +509,7 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
                     return;
                   }
                   // 取消编辑。
+                  commandManager.undoAll();
                   stateModel.State = EditingState.none;
                   _announceScroll(false);
                   setState(() {

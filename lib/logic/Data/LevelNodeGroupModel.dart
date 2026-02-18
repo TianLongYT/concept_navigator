@@ -178,7 +178,7 @@ class NodeViewData extends ChangeNotifier{
     double curScale = scale;
     Offset lastViewPos = _lastViewPos;
     double lastScale = _lastScale;
-    commandManager.PushCommand(Command(
+    commandManager.naviInstance.PushCommand(Command(//commandManager.naviInstance,
         function: (){
           viewPosX = curViewPos.dx;
           viewPosY = curViewPos.dy;

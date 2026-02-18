@@ -1,8 +1,22 @@
 
 import 'package:flutter/material.dart';
 class MMath{
+
   static double lerp(double v1,double v2,double t){
     return (v2 - v1)* t / (v1+v2);
+  }
+
+
+
+  //list
+  static void swap<T>(List<T> list, int index1, int index2) {
+    if (index1 < 0 || index1 >= list.length ||
+        index2 < 0 || index2 >= list.length) {
+      throw RangeError('Index out of range');
+    }
+    T temp = list[index1];
+    list[index1] = list[index2];
+    list[index2] = temp;
   }
 }
 

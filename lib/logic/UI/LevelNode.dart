@@ -85,19 +85,25 @@ class LevelNode extends StatelessWidget {
                     if(index == null){
                       throw Exception("LevelNode尝试通过NodeSwapModel找自身在父Tree的Index,但是失败了");
                     }
-
+                    if(index == swapModel.originIndex){
+                      return;
+                    }
+                    int originIndex = swapModel.originIndex;
                     swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
                     commandManager.moveNodeInstance.PushCommand(
                       Command(
                         function: (){
-                          swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
-
+                          swapModel.nodeSwap(originIndex, index, selection.IsInDomain, false);//创建临时变量。防止调用时再次获取当前的sawpModel.originIndex。
+                          swapModel.rebuildNodeTreeDic();
                         },
                         undoFunction: (){
-                          swapModel.nodeSwap(swapModel.originIndex, index, selection.IsInDomain, false);
+                          swapModel.nodeSwap(originIndex, index, selection.IsInDomain, false);
+                          swapModel.rebuildNodeTreeDic();
+                          print("发生rebuild,${originIndex}与${index}交换");
                         }
                       )
                     );
+                    //commandManager
                     //交换完过后，进入继续选择节点的状态。
                     editingStateModel.State = EditingState.selectingMovingNode;
                     return;
