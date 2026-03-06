@@ -5,6 +5,13 @@ import 'package:flutter/material.dart';
 
 class ConceptTree2NodeDrawingDataDic extends ChangeNotifier{
   Map<String,NodeDrawingData> _name2NodeDrawingData = {};
+
+  Map<String, NodeDrawingData> get data => _name2NodeDrawingData;
+  set data(Map<String, NodeDrawingData> value) {
+    _name2NodeDrawingData = value;
+    notifyListeners();
+  }
+
   void ChangeKeys(String Function(String) rule){
     _name2NodeDrawingData = {
       for(var entry in _name2NodeDrawingData.entries)
@@ -40,6 +47,13 @@ class ConceptTree2NodeDrawingDataDic extends ChangeNotifier{
 
 class ConceptTree2DomainDrawingDataDic extends ChangeNotifier{
   Map<String,DomainDrawingData> _name2DomainDrawingData = {"root":DomainDrawingData(nodeAppearance: NodeAppearance())};
+
+  Map<String, DomainDrawingData> get data => _name2DomainDrawingData;
+  set data(Map<String, DomainDrawingData> value) {
+    _name2DomainDrawingData = value;
+    notifyListeners();
+  }
+
   void ChangeKeys(String Function(String) rule){
     _name2DomainDrawingData = {
       for(var entry in _name2DomainDrawingData.entries)
@@ -62,10 +76,26 @@ class ConceptTree2DomainDrawingDataDic extends ChangeNotifier{
     _name2DomainDrawingData.remove(key);
     notifyListeners();
   }
+  repaint()=>notifyListeners();
 
+  @override
+  String toString(){
+    String res = "";
+    for(int i =0;i<_name2DomainDrawingData.length;i++){
+      res += "key:${_name2DomainDrawingData.keys.toList()[i]} value:${_name2DomainDrawingData.values.toList()[i]}";
+    }
+    return res;
+  }
 }
 class ConceptTree2NodeViewDataDic extends ChangeNotifier{
   Map<String,NodeViewData> _name2NodeViewData = {"root":NodeViewData()};
+
+  Map<String, NodeViewData> get data => _name2NodeViewData;
+  set data(Map<String, NodeViewData> value) {
+    _name2NodeViewData = value;
+    notifyListeners();
+  }
+
   void ChangeKeys(String Function(String) rule){
     _name2NodeViewData = {
       for(var entry in _name2NodeViewData.entries)

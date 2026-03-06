@@ -1,5 +1,4 @@
 
-
 //域树。节点树。
 import 'package:flutter/material.dart';
 
@@ -9,14 +8,18 @@ abstract class NodeTree{
   String GetDomainKey();
   String GetDomainNodeKey();
 
-
+  Map<String, dynamic> toJson();
 }
 
 class ConceptNodeTree extends NodeTree{
+  // 显式添加默认构造函数，因为 factory fromJson 的存在会导致默认构造函数消失
+  ConceptNodeTree();
+
   List<ConceptNodeTree> children = [];
   String name = "NewConcept";
   String alias = "";
   String domainKey = "root";
+  NodeTree? parent = null;
 
   int? FindIndex(ConceptNodeTree child){
     for(int i =0;i<children.length;i++){
@@ -26,6 +29,7 @@ class ConceptNodeTree extends NodeTree{
     }
     return null;
   }
+
   @override String toString() {
     return "name${name},alias${alias},children${children},childrenCount${children.length}";
   }
@@ -42,9 +46,32 @@ class ConceptNodeTree extends NodeTree{
 
   @override
   bool get IsInDomain => false;
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'concept',
+      'name': name,
+      'alias': alias,
+      'children': children.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  factory ConceptNodeTree.fromJson(Map<String, dynamic> json,{NodeTree? parent}) {
+    var node = ConceptNodeTree()
+      ..name = json['name'] ?? ""
+      ..alias = json['alias'] ?? "";
+    if (json['children'] != null) {
+      node.children = (json['children'] as List).map((e) => ConceptNodeTree.fromJson(e,parent: parent)).toList();
+    }
+    return node;
+  }
 }
 
 class DomainTree extends NodeTree{
+  // 显式添加默认构造函数
+  DomainTree();
+
   DomainTree? parent = null;
   List<DomainTree> children = [];
   List<ConceptNodeTree> conceptNodeTree = [];
@@ -107,6 +134,28 @@ class DomainTree extends NodeTree{
   @override
   bool get IsInDomain => true;
 
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'domain',
+      'name': name,
+      'children': children.map((e) => e.toJson()).toList(),
+      'conceptNodeTree': conceptNodeTree.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  factory DomainTree.fromJson(Map<String, dynamic> json, {DomainTree? parent}) {
+    var domain = DomainTree()
+      ..name = json['name'] ?? ""
+      ..parent = parent;
+    if (json['children'] != null) {
+      domain.children = (json['children'] as List).map((e) => DomainTree.fromJson(e, parent: domain)).toList();
+    }
+    if (json['conceptNodeTree'] != null) {
+      domain.conceptNodeTree = (json['conceptNodeTree'] as List).map((e) => ConceptNodeTree.fromJson(e,parent: domain)).toList();
+    }
+    return domain;
+  }
 }
 
 class ConceptTreeModel extends ChangeNotifier{
@@ -145,6 +194,14 @@ class ConceptTreeModel extends ChangeNotifier{
     domainNodeKey2ConceptTree[key] = nodeTree;
     for(int i =0;i<nodeTree.children.length;i++){
       _GenerateDicNode(domainKey, nodeTree.children[i]);
+    }
+  }
+
+  void _RemoveNodeFromDic(String domainKey, ConceptNodeTree nodeTree) {
+    String key = GenerateDomainNodeKey(domainKey, nodeTree.name, nodeTree.alias);
+    domainNodeKey2ConceptTree.remove(key);
+    for (var child in nodeTree.children) {
+      _RemoveNodeFromDic(domainKey, child);
     }
   }
 
@@ -268,6 +325,8 @@ class ConceptTreeModel extends ChangeNotifier{
     }
     newTree.parent = domain;
     domain.children.add(newTree);
+    GenerateDic();
+    notifyListeners();
     return true;
   }
   bool AddNewConceptInDomain(String domainKey,ConceptNodeTree newTree){
@@ -276,7 +335,10 @@ class ConceptTreeModel extends ChangeNotifier{
       return false;
     }
     newTree.domainKey = domainKey;
+    newTree.parent = domain;
     domain.conceptNodeTree.add(newTree);
+    GenerateDic();
+    notifyListeners();
     return true;
   }
   bool AddNewConceptInConceptNode(String domainNodeKey,ConceptNodeTree newTree){
@@ -291,7 +353,76 @@ class ConceptTreeModel extends ChangeNotifier{
     }
 
     newTree.domainKey = domainKey;
+    newTree.parent = concept;
     concept.children.add(newTree);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool InsertDomainInDomain(String domainKey, DomainTree newTree, int index) {
+    DomainTree? domain = GetDomainTree(domainKey);
+    if (domain == null) return false;
+    newTree.parent = domain;
+    domain.children.insert(index, newTree);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool InsertConceptInDomain(String domainKey, ConceptNodeTree newTree, int index) {
+    DomainTree? domain = GetDomainTree(domainKey);
+    if (domain == null) return false;
+    newTree.domainKey = domainKey;
+    newTree.parent = domain;
+    domain.conceptNodeTree.insert(index, newTree);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool InsertConceptInConceptNode(String domainNodeKey, ConceptNodeTree newTree, int index) {
+    ConceptNodeTree? parent = GetConceptNodeByDic(domainNodeKey);
+    if (parent == null) return false;
+    String domainKey = ConceptTreeModel.DomainNodeKey2DomainKey(domainNodeKey);
+    newTree.domainKey = domainKey;
+    newTree.parent = parent;
+    parent.children.insert(index, newTree);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool RemoveConceptFromDomain(String domainKey, ConceptNodeTree child) {
+    DomainTree? domain = GetDomainTree(domainKey);
+    if (domain == null) return false;
+    int? index = domain.FindConceptIndex(child);
+    if (index == null) return false;
+    domain.conceptNodeTree.removeAt(index);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool RemoveConceptFromConcept(String domainNodeKey, ConceptNodeTree child) {
+    ConceptNodeTree? parent = GetConceptNodeByDic(domainNodeKey);
+    if (parent == null) return false;
+    int? index = parent.FindIndex(child);
+    if (index == null) return false;
+    parent.children.removeAt(index);
+    GenerateDic();
+    notifyListeners();
+    return true;
+  }
+
+  bool RemoveDomainFromDomain(String parentDomainKey, DomainTree child) {
+    DomainTree? parent = GetDomainTree(parentDomainKey);
+    if (parent == null) return false;
+    int? index = parent.FindDomainIndex(child);
+    if (index == null) return false;
+    parent.children.removeAt(index);
+    GenerateDic();
+    notifyListeners();
     return true;
   }
 
@@ -327,13 +458,13 @@ class ConceptTreeModel extends ChangeNotifier{
   }
   String _PrintDomainTreeCor(DomainTree domainTree,int layer){
 
-    String res =  "rootDomain:"+domainTree.name;
-    res += "\r\n"+ Layer2Indentation(layer)+ "childDomain:";
+    String res = "\r\n" + Layer2Indentation(layer)+  "rootDomain:"+domainTree.name;
+    res += "\r\n"+ Layer2Indentation(layer+1)+ "childDomain:";
     for(int i = 0; i< domainTree.children.length;i++){
       res +=" ";
       res += _PrintDomainTreeCor(domainTree.children[i],layer +1);
     }
-    res += "\r\n" + Layer2Indentation(layer)+ "childNode:";
+    res += "\r\n" + Layer2Indentation(layer+1)+ "childNode:";
     for(int i =0;i<domainTree.conceptNodeTree.length;i++){
       res += " ";
       res += _PrintNodeTreeCor(domainTree.conceptNodeTree[i],layer + 1);
@@ -341,9 +472,9 @@ class ConceptTreeModel extends ChangeNotifier{
     return res;
   }
   String _PrintNodeTreeCor(ConceptNodeTree nodeTree,int layer){
-    String res = "rootNode:"+nodeTree.name;
+    String res = "\r\n" + Layer2Indentation(layer)+"rootNode:"+nodeTree.name;
 
-    res += "\r\n" + Layer2Indentation(layer)+ "childNode:";
+    res += "\r\n" + Layer2Indentation(layer+1)+ "childNode:";
     for(int i =0;i<nodeTree.children.length;i++){
       res += " ";
       res += _PrintNodeTreeCor(nodeTree.children[i],layer + 1);
@@ -361,6 +492,18 @@ class ConceptTreeModel extends ChangeNotifier{
 
     return ' ' *(layer * degree);
 
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'rootTree': rootTree?.toJson(),
+    };
+  }
+
+  static ConceptTreeModel fromJson(Map<String, dynamic> json) {
+    return ConceptTreeModel(
+      rootTree: json['rootTree'] != null ? DomainTree.fromJson(json['rootTree']) : null,
+    );
   }
 
 }

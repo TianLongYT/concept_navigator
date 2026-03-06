@@ -1,5 +1,8 @@
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
+import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
+import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
@@ -76,9 +79,12 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
   Widget build(BuildContext context) {
     //GlobalStateModel stateModel = context.watch<GlobalStateModel>();
     ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
+    GlobalStateModel globalState = context.read<GlobalStateModel>();
+    AddressBarModel addressBar = context.read<AddressBarModel>();
     ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
     ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
+    CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -112,9 +118,76 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
                   //bool hasSameDomain = false;
                   bool needChoseChildren = false;
 
-                  String newDomainNodeKey = ConceptTreeModel.AppendDomainKey(selection.currentDomain, controller.text);
-                  //风险判断。
+                  DomainTree? selectedDomain = selection.SelectedDomain;
+                  if(selectedDomain == null){
+                    throw Exception("当前没有选中DomainTree");
+                  }
 
+                  String oldName = selectedDomain.name;
+                  String newName = controller.text;
+
+                  // 初始路径
+                  String oldDomainNodeKey = selectedDomain.GetDomainNodeKey();
+
+                  void doRename(String targetName, String fromPath, String toName){
+                    //设置节点名和别名。
+                    selectedDomain.name = targetName;
+
+                    treeModel.GenerateDic();
+
+                    DomainDrawingData? lastDrawingData = domainDrawingDataDic.GetDomainDrawingData(fromPath);
+                    if(lastDrawingData == null){
+                      print("错误，概念编辑面板找不到修改前的渲染数据");
+                      return;
+                    }
+                    lastDrawingData.text = targetName;
+
+                    //遍历这个域内的所有子树，并且修改Dic。
+                    print("交换domainDrawingData");
+                    domainDrawingDataDic.ChangeKeys((key){
+                      String? res = ConceptTreeModel.replaceDomainKey(key, fromPath, toName);
+                      return res?? key;
+                    });
+
+                    print("交换nodeDrawingData");
+                    nodeDrawingDataDic.ChangeKeys((key){
+                      String? res = ConceptTreeModel.replaceDomainKey(key, fromPath, toName);
+                      return res?? key;
+                    });
+
+                    print("交换viewData");
+                    viewDataDic.ChangeKeys((key){
+                      String? res = ConceptTreeModel.replaceDomainKey(key, fromPath, toName);
+                      return res?? key;
+                    });
+
+                    // 重新聚焦
+                    selection.SelectAndFocusNode(
+                      selectedNode: selectedDomain,
+                      parent: selectedDomain.parent!,
+                      globalState: globalState,
+                      addressBar: addressBar,
+                      treeModel: treeModel,
+                      nodeDrawingDataDic: nodeDrawingDataDic,
+                      domainDrawingDataDic: domainDrawingDataDic,
+                      viewDrawingDataDic: viewDataDic,
+                    );
+                  }
+
+                  // 计算更名后的路径以便重做/撤回
+                  String newDomainNodeKey = ConceptTreeModel.replaceDomainKey(oldDomainNodeKey, oldDomainNodeKey, newName)!;
+
+                  // 执行
+                  doRename(newName, oldDomainNodeKey, newName);
+
+                  // 入栈
+                  commandManager.PushCommand(commandManager.editInstance, Command(
+                    function: () => doRename(newName, oldDomainNodeKey, newName),
+                    undoFunction: () => doRename(oldName, newDomainNodeKey, oldName),
+                  ));
+
+                  /*
+                  //风险判断。
                   String domainNodeKey = selection.SelectedDomain!.GetDomainNodeKey();
 
                   DomainDrawingData? lastDrawingData = domainDrawingDataDic.GetDomainDrawingData(domainNodeKey);
@@ -128,17 +201,6 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
                     return;
                   }
 
-                  //设置节点名和别名。
-                  selection.SelectedDomain!.name = controller.text;
-                  //selection.SelectedConceptNode!.alias = aliasController.text;
-                  // if(hasSameDomain == false) {
-                  //
-                  // }
-                  // else if(needChoseChildren == false){
-                  //   print("存在重名概念，将自身设置成引用");//这里还是有问题。
-                  //   selection.SelectedConceptNode!.children.clear();
-                  // }
-
                   //设置渲染物体。
                   DomainDrawingData newDrawingData = lastDrawingData.Clone();
                   newDrawingData.text = controller.text;
@@ -151,29 +213,7 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
 
                   domainDrawingDataDic.remove(domainNodeKey);
                   viewDataDic.remove(domainNodeKey);
-
-                  //遍历这个域内的所有子树，并且修改Dic。
-                  print("交换ddomainDrawingDatat");
-                  domainDrawingDataDic.ChangeKeys((key){
-                    String? res = ConceptTreeModel.replaceDomainKey(key, domainNodeKey, controller.text);
-                    return res?? key;
-                  });
-                  print("交换nodenDrawingDatat");
-
-                  nodeDrawingDataDic.ChangeKeys((key){
-                    String? res = ConceptTreeModel.replaceDomainKey(key, domainNodeKey, controller.text);
-                    return res?? key;
-                  });
-                  print("交换viewDatat");
-                  viewDataDic.ChangeKeys((key){
-                    String? res = ConceptTreeModel.replaceDomainKey(key, domainNodeKey, controller.text);
-                    return res?? key;
-                  });
-
-                  // print("打印节点字典"+treeModel.PrintDic());
-                  // if(!treeModel.ContainDomain(domainNodeKey)) {
-                  //
-                  // }
+                  */
 
                 },
                 child: Text("修改域名")

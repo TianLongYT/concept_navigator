@@ -1,9 +1,12 @@
 //Customizable可自定义的状态组件管理器公共数据。
 //editingConceptPanel
 import 'package:concept_navigator/MTools/MMath.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeAppearanceEditorComponent/NodeAppearanceEditorComponent.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeAppearanceEditorComponent/NodeGroupEditorComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeRenameComponent/ConceptRenameComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeRenameComponent/DomainRenameComponent.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeSearchComponent/NodeSearchComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/StatefulComponent/StatefulComponents.dart';
 import 'package:flutter/material.dart';
 
@@ -22,6 +25,10 @@ class StatefulComponentModel{
   StatefulComponentModel.nodeMovingComponent():title = "节点移动",icon = Icons.move_down,child = ConceptMoveComponent();
   StatefulComponentModel.conceptRenamingComponent():title = "概念节点信息",icon = Icons.rectangle,child = ConceptRenameComponent();
   StatefulComponentModel.domainRenamingComponent(): title ="域节点信息",icon = Icons.rectangle_outlined,child = DomainRenameComponent();
+  StatefulComponentModel.nodeAppearanceEditorComponent():title = "节点外观",icon = Icons.style,child = NodeAppearanceEditorComponent();
+  StatefulComponentModel.nodeGroupEditorComponent():title = "节点组设置",icon = Icons.settings,child = NodeGroupEditorComponent();
+  StatefulComponentModel.nodeSearchComponent():title = "节点查找",icon = Icons.settings,child = NodeSearchComponent();
+
 }
 class StatefulComponentManagerModel{
   List<StatefulComponentModel> components;
@@ -62,21 +69,41 @@ class StatefulComponentManagerModelForProvider extends ChangeNotifier{
 
   StatefulComponentManagerModel editingConceptPanel;
   StatefulComponentManagerModel editingDomainPanel;
+  StatefulComponentManagerModel editingParentConceptPanel;
+  StatefulComponentManagerModel editingParentDomainPanel;
 
   StatefulComponentManagerModelForProvider({
     StatefulComponentManagerModel? editingConceptPanel,
     StatefulComponentManagerModel? editingDomainPanel,
+    StatefulComponentManagerModel? editingParentConceptPanel,
+    StatefulComponentManagerModel? editingParentDomainPanel,
 
   }):editingConceptPanel = editingConceptPanel?? StatefulComponentManagerModel(
       components: [
         StatefulComponentModel.conceptRenamingComponent(),
         StatefulComponentModel.nodeMovingComponent(),
+        StatefulComponentModel.nodeAppearanceEditorComponent(),
       ]
   ),
         editingDomainPanel = editingDomainPanel?? StatefulComponentManagerModel(
             components: [
               StatefulComponentModel.domainRenamingComponent(),
+              StatefulComponentModel.nodeAppearanceEditorComponent(),
               StatefulComponentModel.nodeMovingComponent(),
+            ]
+        ),
+        editingParentConceptPanel = editingParentConceptPanel?? StatefulComponentManagerModel(
+          components: [
+            StatefulComponentModel.nodeSearchComponent(),
+            StatefulComponentModel.nodeGroupEditorComponent(),
+
+          ]
+        ),
+
+        editingParentDomainPanel = editingParentDomainPanel?? StatefulComponentManagerModel(
+            components: [
+              StatefulComponentModel.nodeSearchComponent(),
+              StatefulComponentModel.nodeGroupEditorComponent(),
             ]
         )
   ;

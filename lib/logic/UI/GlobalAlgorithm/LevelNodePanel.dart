@@ -4,7 +4,7 @@ import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 //import 'package:concept_navigator/logic/Data/GlobalState.dart';
 //import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 //import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
-import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:concept_navigator/logic/UI/LevelDomain.dart';
 import 'package:concept_navigator/logic/UI/LevelNode.dart';
 import 'package:concept_navigator/logic/UI/LevelNodePresentation.dart';
@@ -61,7 +61,7 @@ class LevelNodePanel  extends StatelessWidget {
                       left : position.dx * scale,
                       top : position.dy * scale,
                       //child: DebugUI.pointer(),
-                      child:LevelNodePresentation(scale: scale,drawingData: nodePositionHelper.childDomainDrawingData!, isInDomain: true,nodeTree: null,domainTree: nodeTreeMap.value!,),
+                      child:LevelNodePresentation(scale: scale,parentConceptDrawingData: null,parentDomainDrawingData: nodePositionHelper.domainDrawingData,drawingData: nodePositionHelper.childDomainDrawingData!, isDomain: true,nodeTree: null,domainTree: nodeTreeMap.value!,),
                     );
 
                   })
@@ -75,7 +75,7 @@ class LevelNodePanel  extends StatelessWidget {
                       left : position.dx * scale ,
                       top : position.dy * scale,
                       //child: DebugUI.pointer(),
-                      child: LevelNodePresentation(scale: scale, drawingData: nodePositionHelper.childNodeDrawingData!,isInDomain: false, nodeTree: nodeTreeMap.value!,domainTree: null,),
+                      child: LevelNodePresentation(scale: scale,parentConceptDrawingData: null,parentDomainDrawingData: nodePositionHelper.domainDrawingData, drawingData: nodePositionHelper.childNodeDrawingData!,isDomain: false, nodeTree: nodeTreeMap.value!,domainTree: null,),
                     );
                   })
 
@@ -91,7 +91,7 @@ class LevelNodePanel  extends StatelessWidget {
                   left : position.dx * scale ,
                   top : position.dy *scale,
                   //child: DebugUI.pointer(),
-                  child: LevelNodePresentation(isInDomain: false,scale: scale,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,domainTree: null,),
+                  child: LevelNodePresentation(isDomain: false,scale: scale,parentConceptDrawingData: nodePositionHelper.nodeDrawingData,parentDomainDrawingData: null,drawingData: nodePositionHelper.childNodeDrawingData!, nodeTree: nodeTreeMap.value!,domainTree: null,),
                 );
 
               }),

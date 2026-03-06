@@ -88,10 +88,20 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
     inheritedItem!.needStopScroll!(stop);
     //设置一下state（没什么卵用）
     if(stop){
-      statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 2);
+      if(selection.IsSelectedDomain){
+        statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingDomainPanel, inheritedItem!.index, 2);
+      }
+      else if(selection.IsSelectedConceptNode){
+        statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 2);
+      }
     }
     else{
-      statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 0);
+      if(selection.IsSelectedDomain){
+        statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingDomainPanel, inheritedItem!.index, 0);
+      }
+      else if(selection.IsSelectedConceptNode){
+        statefulComponentManagerModelForProvider.setComponentState(statefulComponentManagerModelForProvider.editingConceptPanel, inheritedItem!.index, 0);
+      }
     }
 
   }
@@ -156,8 +166,9 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
       //   moveSwapDomain(direction);
       // }
       // else
-        if(mode == 2){
-        moveSqueezeDomain(direction);
+      if(mode == 2){
+        moveSqueeze(direction,selection.IsInDomain,true);
+      //moveSqueezeDomain(direction);
       }
     }
     else if(selection.IsSelectedConceptNode){
@@ -165,8 +176,8 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
       //   moveSwapConcept(direction);
       // }
       // else
-        if(mode == 2){
-        moveSqueezeConcept(direction);
+      if(mode == 2){
+        moveSqueeze(direction,selection.IsInDomain,false);
       }
     }
 
@@ -222,23 +233,7 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
   }
 
  */
-  void moveSqueezeDomain(EJoystickDirection direction){
-    switch(direction){
-      case EJoystickDirection.left:
-        break;
-      case EJoystickDirection.right:
-        break;
-      case EJoystickDirection.top:
-        break;
-
-      case EJoystickDirection.bottom:
-        break;
-
-      default:
-        break;
-    }
-  }
-  void moveSqueezeConcept(EJoystickDirection direction){
+  void moveSqueeze(EJoystickDirection direction,bool isInDomain,bool isDomain){
     //将当前位置与目标位置进行交换。
     swapModel.reCalculateCurIndex(selection);
     //int originIndex = swapModel.originIndex;
@@ -251,14 +246,14 @@ class _ConceptMoveComponentState extends State<ConceptMoveComponent> {
       print("在最边缘怎么移动？${newIndex}");
       return;
     }
-    swapModel.nodeSwap(curIndex, newIndex, true,false);
+    swapModel.nodeSwap(curIndex, newIndex, isInDomain,isDomain);
     swapModel.rebuildNodeTreeDic();
     print("移动节点，序号curIndex${curIndex},newIndex${newIndex}");
     commandManagerProvider.PushCommand(commandManager,Command(function: (){
-      swapModel.nodeSwap(curIndex, newIndex, true,false);
+      swapModel.nodeSwap(curIndex, newIndex, isInDomain,isDomain);
       swapModel.rebuildNodeTreeDic();
     },undoFunction: (){
-      swapModel.nodeSwap(curIndex, newIndex,true, false);
+      swapModel.nodeSwap(curIndex, newIndex,isInDomain, isDomain);
       swapModel.rebuildNodeTreeDic();
     }));
   }

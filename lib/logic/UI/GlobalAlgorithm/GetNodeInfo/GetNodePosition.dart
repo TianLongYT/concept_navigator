@@ -91,7 +91,7 @@ class NodePositionHelper{
       if(domainTree!.conceptNodeTree.isNotEmpty){
         final String domainNameKey = ConceptTreeModel.GenerateDomainNodeKey(curDomainKey, domainTree!.conceptNodeTree[0].name, domainTree!.conceptNodeTree[0].alias);
         final NodeDrawingData? drawingData = nodeDrawingDataDic.GetNodeDrawingData(domainNameKey);
-        if(drawingData == null) throw Exception("exception,根据子树找不到绘制子节点的渲染物体,键:${domainNameKey}");
+        if(drawingData == null) throw Exception("exception,根据子树找不到绘制子节点的渲染物体,键:${domainNameKey}，字典${nodeDrawingDataDic.toString()}");
 
         Size nodeSize = drawingData.nodeAppearance.nodeSize * drawingData.nodeAppearance.emptySize;
         int usefulCount = domainTree!.conceptNodeTree.length > domainDrawingData!.maxX ? domainDrawingData!.maxX:domainTree!.conceptNodeTree.length;
@@ -124,7 +124,7 @@ class NodePositionHelper{
       }
       nodeTree = treeModel.GetConceptNodeByDic(curDomainNodeKey);
       if(nodeTree == null){
-        throw Exception("无法获取当前概念的树,curDomainNodeKey${curDomainNodeKey}");
+        throw Exception("无法获取当前概念的树${treeModel.PrintTree()},curDomainNodeKey${curDomainNodeKey}");
       }
 
       //计算概念群的大小。
@@ -240,7 +240,7 @@ class NodePositionHelper{
       else if(childNodeTree != null){
         int? index = domainTree!.FindConceptIndex(childNodeTree);
         if(index == null) {
-          throw Exception("无法根据子概念节点在域树中找到对应树");
+          throw Exception("无法根据子概念节点在域树中找到对应树${domainTree.toString()}");
         }
 
         return GetNodePositionByIndex(false,index);
@@ -251,7 +251,7 @@ class NodePositionHelper{
 
         int? index = nodeTree!.FindIndex(childNodeTree);
         if(index == null) {
-          throw Exception("无法根据子概念节点在概念树中找到对应树");
+          throw Exception("无法根据子概念节点在概念树中找到对应树，当前父树$nodeTree,树名${nodeTree?.name}，当前树$childNodeTree,树名${childNodeTree.name + childNodeTree.alias}");
         }
 
         return GetNodePositionByIndex(false,index);
@@ -398,9 +398,26 @@ class NodePositionHelper{
 }
 
 class FocusNodeHelper{
-  FocusNodeHelper(BuildContext context,bool parentIsInDomain,String curDomainKey,String curDomainNodeKey,this.allSize):
+  FocusNodeHelper(BuildContext context,bool parentIsInDomain,String curDomainKey,String curDomainNodeKey,{this.nodeAllSize}):
     _posHelper = NodePositionHelper.byContext(context),
     nodeViewDic = context.read<ConceptTree2NodeViewDataDic>()
+  {
+    _posHelper.InitData(parentIsInDomain, curDomainKey, curDomainNodeKey);
+
+    nodeViewData = nodeViewDic.GetNodeViewData(curDomainNodeKey);
+    if(nodeViewData == null){
+      throw Exception("LevelNode找不到NodeViewData");
+    }
+
+  }
+  FocusNodeHelper.noContext(bool parentIsInDomain,String curDomainKey,String curDomainNodeKey,{this.nodeAllSize
+    ,required ConceptTreeModel treeModel
+    ,required ConceptTree2DomainDrawingDataDic domainDrawingDataDic
+    ,required ConceptTree2NodeDrawingDataDic nodeDrawingDataDic
+    ,required ConceptTree2NodeViewDataDic viewDrawingDataDic
+  }):
+        _posHelper = NodePositionHelper(treeModel: treeModel,domainDrawingDataDic: domainDrawingDataDic,nodeDrawingDataDic: nodeDrawingDataDic,viewDrawingDataDic: viewDrawingDataDic),
+        nodeViewDic = viewDrawingDataDic
   {
     _posHelper.InitData(parentIsInDomain, curDomainKey, curDomainNodeKey);
 
@@ -421,23 +438,25 @@ class FocusNodeHelper{
     if(nodeViewData == null){
       throw Exception("LevelNode找不到NodeViewData");
     }
-    this.allSize = allSize;
+    this.nodeAllSize = allSize;
     _posHelper.InitData(parentIsInDomain, curDomainKey, curDomainNodeKey);
   }
   final NodePositionHelper _posHelper;
   late NodeViewData? nodeViewData;
   final ConceptTree2NodeViewDataDic nodeViewDic;
-  late Size allSize;
+  Size? nodeAllSize;
   late VoidCallback moveView;
 
   void FocusNode(ConceptNodeTree? childConceptTree,DomainTree? childDomainTree ){
     //获取当前位置。
     Offset? pos = _posHelper.GetNodePositionByInstance(childConceptTree, childDomainTree);
+
+    final actualSize = nodeAllSize ?? _posHelper.nodeSize ?? Size(0,0);
     AnimationController controller = GlobalCoroutine().GetController();
     double originPosX = nodeViewData!.viewPosX;
-    double targetPosX = -pos!.dx - allSize.width * 0.5;
+    double targetPosX = -pos!.dx - actualSize.width * 0.5;
     double originPosY = nodeViewData!.viewPosY;
-    double targetPosY = -pos!.dy - allSize.height * 0.5;
+    double targetPosY = -pos!.dy - actualSize.height * 0.5;
     controller.duration = Duration(milliseconds: 300);
     
     moveView = (){

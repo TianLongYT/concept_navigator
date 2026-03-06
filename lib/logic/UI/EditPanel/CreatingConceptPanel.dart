@@ -1,3 +1,5 @@
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
+import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
@@ -5,7 +7,7 @@ import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
-import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -84,9 +86,11 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
     SelectionViewData selection = context.watch<SelectionViewData>();
     ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
-    ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
+    ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.read<ConceptTree2NodeDrawingDataDic>();
     ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
+    CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
+    AddressBarModel addressBar = context.read<AddressBarModel>();
 
 
     FocusNodeHelper focusNodeHelper = FocusNodeHelper.lateInit(context);
@@ -134,40 +138,80 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
           ),
           OutlinedButton(onPressed:hasError?null: (){
 
+
             ConceptNodeTree node2Add = ConceptNodeTree()..name = controller.text..alias = aliasController.text;
             NodeDrawingData newDrawingData =NodeDrawingData(nodeAppearance: NodeAppearance())..text = controller.text;
-            if(selection.IsInDomain){
+            NodeViewData newViewData = NodeViewData();
+            String newKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text, aliasController.text);
+            final String parentKey = selection.IsInDomain ? selection.currentDomain : selection.CurrentDomainNodeKey;
+            final bool isParentDomain = selection.IsInDomain;
 
-              if(!treeModel.AddNewConceptInDomain(selection.currentDomain, node2Add)){
-                print("错误：找不到当前界面的domainTree");
-                return;
+            void doCreate() {
+              if (isParentDomain) {
+                if(!treeModel.AddNewConceptInDomain(parentKey, node2Add)){
+                  throw Exception("错误：找不到当前界面的domainTree");
+                  return;
+                }
+                domainDrawingDataDic.GetDomainDrawingData(parentKey)?.AddNodeDrawingData();
+              } else {
+                if(!treeModel.AddNewConceptInConceptNode(parentKey, node2Add)){
+                  throw Exception("错误：找不到当前界面的nodeTree");
+                  return;
+                }
+                nodeDrawingDataDic.GetNodeDrawingData(parentKey)?.AddNodeDrawingData();
               }
+              nodeDrawingDataDic.putIfAbsent(newKey, () => newDrawingData);
+              viewDataDic.putIfAbsent(newKey, () => newViewData);
 
-              treeModel.GenerateDic();
-              print("节点树字典"+treeModel.PrintDic());
-
-              domainDrawingDataDic.GetDomainDrawingData(selection.currentDomain)?.AddNodeDrawingData();
-              nodeDrawingDataDic.putIfAbsent( ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text, aliasController.text), ()=>
-              newDrawingData);
-              viewDataDic.putIfAbsent( ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text,  aliasController.text), ()=>NodeViewData());
+              selection.SelectAndFocusNode(
+                  selectedNode: node2Add,
+                  parent: node2Add.parent!,
+                  globalState: stateModel,
+                  addressBar: addressBar,
+                  treeModel: treeModel,
+                  nodeDrawingDataDic: nodeDrawingDataDic,
+                  domainDrawingDataDic: domainDrawingDataDic,
+                  viewDrawingDataDic: viewDataDic,
+              );
 
             }
-            else{
 
-              if(!treeModel.AddNewConceptInConceptNode(selection.CurrentDomainNodeKey, node2Add)){
-                print("错误：找不到当前界面的nodeTree");
-                return;
+            void undoCreate() {
+              if (isParentDomain) {
+                treeModel.RemoveConceptFromDomain(parentKey, node2Add);
+                domainDrawingDataDic.GetDomainDrawingData(parentKey)?.RemoveAtNodeDrawingDataSqueeze(
+                    treeModel.GetDomainTree(parentKey)!.conceptNodeTree.length // 此时节点已删，需注意索引
+                );
+              } else {
+                treeModel.RemoveConceptFromConcept(parentKey, node2Add);
+                nodeDrawingDataDic.GetNodeDrawingData(parentKey)?.RemoveAtNodeDrawingDataSqueeze(
+                    treeModel.GetConceptNodeByDic(parentKey)!.children.length
+                );
               }
-
-              treeModel.GenerateDic();
-              print("节点树字典"+treeModel.PrintDic());
-              //查找并添加绘制物
-              nodeDrawingDataDic.GetNodeDrawingData(selection.CurrentDomainNodeKey)?.AddNodeDrawingData();
-              nodeDrawingDataDic.putIfAbsent( ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text, aliasController.text), ()=>
-              newDrawingData);
-              viewDataDic.putIfAbsent( ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text,  aliasController.text), ()=>NodeViewData());
-
+              if(!treeModel.ContainConceptNode(newKey)){
+                nodeDrawingDataDic.remove(newKey);
+                viewDataDic.remove(newKey);
+              }
+              selection.CancelSelectionAndJumpOutParent(
+                selectedNode: node2Add,
+                parent: node2Add.parent!,
+                globalState: stateModel,
+                addressBar: addressBar,
+                treeModel: treeModel,
+                nodeDrawingDataDic: nodeDrawingDataDic,
+                domainDrawingDataDic: domainDrawingDataDic,
+                viewDrawingDataDic: viewDataDic,
+              );
+              //selection.CancelSelectionAndJumpOutParent(node2Add.parent!, addressBar, stateModel, treeModel);
             }
+
+            // 执行并存入指令栈
+            doCreate();
+            commandManager.PushCommand(commandManager.editInstance, Command(
+              function: doCreate,
+              undoFunction: undoCreate,
+            ));
+
             controller.clear();
             aliasController.clear();
 
@@ -179,7 +223,7 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
             stateModel.State = GlobalState.editingConcept;
             selection.SelectedConceptNode = node2Add;
 
-            // TODO: 聚焦对象。
+            //聚焦对象。
             Size allSize = newDrawingData.nodeAppearance.nodeSize * newDrawingData.nodeAppearance.emptySize;
             focusNodeHelper.Init(selection.IsInDomain, selection.currentDomain, selection.CurrentDomainNodeKey,allSize );
             focusNodeHelper.FocusNode(node2Add, null);

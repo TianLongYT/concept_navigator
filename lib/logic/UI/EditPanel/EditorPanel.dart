@@ -1,14 +1,12 @@
-
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
-import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
-import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
-import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/CreatingConceptPanel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/CreatingDomainPanel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/EditingConceptPanel.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/EditingDomainPanel.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/EditingParentConceptPanel.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/EditingParentDomainPanel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,10 +29,6 @@ class _EditorPanelState extends State<EditorPanel> {
   Widget build(BuildContext context) {
     GlobalStateModel stateModel = context.watch<GlobalStateModel>();
     SelectionViewData selection = context.watch<SelectionViewData>();
-    //ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
-    //ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
-    //ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
-    //ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
 
     bool changeSelected = false;
     if(lastSelectedConcept!=selection.SelectedConceptNode || lastSelectedDomain != selection.SelectedDomain){
@@ -42,7 +36,6 @@ class _EditorPanelState extends State<EditorPanel> {
     }
     lastSelectedConcept = selection.SelectedConceptNode;
     lastSelectedDomain = selection.SelectedDomain;
-    Widget? editWidget;
 
     switch(stateModel.State) {
       case GlobalState.creatingConcept:
@@ -54,14 +47,17 @@ class _EditorPanelState extends State<EditorPanel> {
       case GlobalState.editingDomain:
         return EditingDomainPanel(needInit: changeSelected,);
 
-
       default :
+        if (!selection.IsSelecting) {
+          if (selection.IsInDomain) {
+            return const EditingParentDomainPanel();
+          } else {
+            return const EditingParentConceptPanel();
+          }
+        }
         return Container(
           color: Theme.of(context).colorScheme.surface,
         );
     }
-
   }
-
-
 }

@@ -3,15 +3,19 @@ import 'package:concept_navigator/MTools/UI/DebugUI.dart';
 import 'package:concept_navigator/MTools/UI/TextHeight/GetTextHeight.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodeColor.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/LevelNodePanel.dart';
 import 'package:concept_navigator/logic/UI/NodePresentation.dart';
 import 'package:flutter/material.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/NodePainter.dart';
 
 class LevelNodePresentation extends StatefulWidget {
-  LevelNodePresentation({super.key,double scale = 1.0,required this.isInDomain,required this.drawingData, required this.nodeTree,required this.domainTree}) :
+  LevelNodePresentation({super.key,double scale = 1.0,required this.isDomain,required this.parentDomainDrawingData,required this.parentConceptDrawingData,required this.drawingData, required this.nodeTree,required this.domainTree}) :
         painter =  NodePainter(drawingData: drawingData),_scale = scale;
-  final bool isInDomain;
+  final bool isDomain;
+  final NodeDrawingData? parentConceptDrawingData;//仅仅传入父节点绘制物的推荐颜色。
+  final DomainDrawingData? parentDomainDrawingData;
   final NodeDrawingData drawingData;
   final ConceptNodeTree? nodeTree;
   final DomainTree? domainTree;
@@ -34,8 +38,19 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
     showingLevel = false;
   }
   //int level;
+
+
   @override
   Widget build(BuildContext context) {
+    NodeColorHelper colorHelper = NodeColorHelper.byDrawingData(
+      parentDomainDrawingData: widget.parentDomainDrawingData,
+      parentConceptDrawingData: widget.parentConceptDrawingData,
+      nodeAppearance: widget.drawingData.nodeAppearance,
+      isSelectedDomain: widget.isDomain,
+    );
+
+    Color nodeColor = colorHelper.getNodeColor(context);
+    Color fontColor = colorHelper.getFontColor(context);
 
 
     //bool showingLevel = false;
@@ -54,7 +69,7 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
     //showingLevel = false;
 
     TextStyle textStyle = TextStyle(
-      color: widget.drawingData.nodeAppearance.fontColor,
+      color: fontColor,
       inherit: false,
       fontSize: 14,//动态计算
     );
@@ -69,8 +84,8 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
     centerFontTop = centerFontTop>0? centerFontTop:0;
     print("FullLineTextH${fullLineTextHeight}");
 
-    String domainKey = widget.isInDomain? widget.domainTree!.GetDomainKey():"";
-    if(widget.isInDomain){
+    String domainKey = widget.isDomain? widget.domainTree!.GetDomainKey():"";
+    if(widget.isDomain){
       print("domainKeyR${domainKey}");
     }
     return Container(
@@ -80,7 +95,7 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
 
       // 圆角矩形装饰
       decoration: BoxDecoration(
-        color: widget.drawingData.nodeAppearance.nodeColor,//Colors.green.blend(), Theme.of(context).colorScheme.surface),
+        color: nodeColor,//Colors.green.blend(), Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(height * 0.1),
         border: Border.all(width: BORDER,
             strokeAlign: BorderSide.strokeAlignOutside,
@@ -181,9 +196,9 @@ class _LevelNodePresentationState extends State<LevelNodePresentation> {
                             child: showingLevel? Padding(
                               padding: EdgeInsets.all(0.05 * (height - nextWidgetTop)),
                               child: LevelNodePanel(
-                                  isInDomain: widget.isInDomain,
-                                  currentDomainKey: widget.isInDomain? domainKey : widget.nodeTree!.domainKey,
-                                  currentDomainNodeKey: widget.isInDomain? domainKey :  ConceptTreeModel.GenerateDomainNodeKey(widget.nodeTree!.domainKey,widget. nodeTree!.name, widget.nodeTree!.alias),
+                                  isInDomain: widget.isDomain,
+                                  currentDomainKey: widget.isDomain? domainKey : widget.nodeTree!.domainKey,
+                                  currentDomainNodeKey: widget.isDomain? domainKey :  ConceptTreeModel.GenerateDomainNodeKey(widget.nodeTree!.domainKey,widget. nodeTree!.name, widget.nodeTree!.alias),
                               ),
                             ):null,
                         ),

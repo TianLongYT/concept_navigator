@@ -129,6 +129,9 @@ class CommandManagerForProvider extends ChangeNotifier{
 
   void PushCommand(CommandManager commandManager,Command command){
     commandManager.PushCommand(command);
+    if(commandManager.poppedCommandStack.isNotEmpty){
+      commandManager.poppedCommandStack.clear();
+    }
     notifyListeners();
   }
   Command? PopCommand(CommandManager commandManager){

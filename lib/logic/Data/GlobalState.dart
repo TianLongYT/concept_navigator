@@ -33,6 +33,8 @@ enum EditingState{
   waitingMovingTarget,
   squeezingNode,
 
+  coloringNode,
+
 }
 class EditingStateModel extends StateModel<EditingState>{
   EditingStateModel():super(EditingState.none);

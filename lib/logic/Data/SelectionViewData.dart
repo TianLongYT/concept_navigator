@@ -1,6 +1,11 @@
+import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
+import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
+import 'package:concept_navigator/logic/Data/GlobalState.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 //选择绘制的组。
 class SelectionViewData extends ChangeNotifier {
@@ -82,6 +87,69 @@ class SelectionViewData extends ChangeNotifier {
     }
     notifyListeners();
   }
+  void _JumpToNode(NodeTree parent,AddressBarModel addressBar,ConceptTreeModel treeModel){
+    if (parent is DomainTree) {
+      currentDomain = parent.GetDomainKey();
+      currentConceptNodeName = "";
+      currentConceptNodeAlias = "";
+    } else if (parent is ConceptNodeTree) {
+      currentDomain = parent.domainKey;
+      currentConceptNodeName = parent.name;
+      currentConceptNodeAlias = parent.alias;
+    }
+    addressBar.updateAddressBar(parent, treeModel);
+  }
+  void _SelectNode(NodeTree selectedNode,GlobalStateModel globalState){
+    if (selectedNode is DomainTree) {
+      SelectedDomain = selectedNode;
+      globalState.State = GlobalState.editingDomain;
+    } else if (selectedNode is ConceptNodeTree) {
+      SelectedConceptNode = selectedNode;
+      globalState.State = GlobalState.editingConcept;
+    }
+  }
+  void _CancleSelection(GlobalStateModel globalState){
+    CancelSelection();
+    globalState.State = GlobalState.normal;
+  }
+  void _FocusNode(NodeTree selectedNode,ConceptTreeModel treeModel,ConceptTree2NodeDrawingDataDic nodeDrawingDataDic,ConceptTree2DomainDrawingDataDic domainDrawingDataDic,ConceptTree2NodeViewDataDic viewDrawingDataDic,){
+    final nodeHelper = FocusNodeHelper.noContext(IsInDomain,currentDomain,CurrentDomainNodeKey, treeModel: treeModel, domainDrawingDataDic: domainDrawingDataDic, nodeDrawingDataDic: nodeDrawingDataDic, viewDrawingDataDic: viewDrawingDataDic);
+    if (selectedNode is DomainTree) {
+      nodeHelper.FocusNode(null, selectedNode);
+    } else if (selectedNode is ConceptNodeTree) {
+      nodeHelper.FocusNode(selectedNode, null);
+    }
+  }
+  void SelectAndFocusNode({
+    required NodeTree selectedNode,
+    required NodeTree parent,
+    required GlobalStateModel globalState,
+    required AddressBarModel addressBar,
+    required ConceptTreeModel treeModel,
+    required ConceptTree2NodeDrawingDataDic nodeDrawingDataDic,
+    required ConceptTree2DomainDrawingDataDic domainDrawingDataDic,
+    required ConceptTree2NodeViewDataDic viewDrawingDataDic,
+  }){
+    _JumpToNode(parent,addressBar,treeModel);
+    _SelectNode(selectedNode,globalState);
+    _FocusNode(selectedNode,treeModel,nodeDrawingDataDic,domainDrawingDataDic,viewDrawingDataDic);
+  }
+
+  void CancelSelectionAndJumpOutParent({
+    required NodeTree selectedNode,
+    required NodeTree parent,
+    required GlobalStateModel globalState,
+    required AddressBarModel addressBar,
+    required ConceptTreeModel treeModel,
+    required ConceptTree2NodeDrawingDataDic nodeDrawingDataDic,
+    required ConceptTree2DomainDrawingDataDic domainDrawingDataDic,
+    required ConceptTree2NodeViewDataDic viewDrawingDataDic,
+  }){
+    _JumpToNode(parent,addressBar,treeModel);
+    _CancleSelection(globalState);
+    //_FocusNode(selectedNode,treeModel,nodeDrawingDataDic,domainDrawingDataDic,viewDrawingDataDic);
+  }
+
 
 }
 

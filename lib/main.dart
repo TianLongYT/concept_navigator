@@ -80,6 +80,14 @@ class MyApp extends StatelessWidget {
               dynamicSchemeVariant: DynamicSchemeVariant.neutral,
               contrastLevel: 0,
           ),
+          extensions: [
+            NodeColorsExtension(
+              defaultConceptFontColor: Colors.black,
+              defaultDomainFontColor: Colors.black,
+              defaultConceptNodeColor: Colors.lightBlueAccent,
+              defaultDomainNodeColor: Colors.deepPurpleAccent,
+            ),
+          ]
           //disabledColor:  Colors.black87,
 
         ),
@@ -89,8 +97,17 @@ class MyApp extends StatelessWidget {
                 seedColor:HSLColor.fromAHSL(1, 54, 0.3, 0.2).toColor(),
                 dynamicSchemeVariant: DynamicSchemeVariant.content,
                 contrastLevel: 0,
-            )),
-        themeMode: ThemeMode.dark ,
+            ),
+            extensions: [
+              NodeColorsExtension(
+                defaultConceptFontColor: Colors.black,
+                defaultDomainFontColor: Colors.black,
+                defaultConceptNodeColor: Colors.lightBlueAccent,
+                defaultDomainNodeColor: Colors.deepPurpleAccent,
+              ),
+            ]
+        ),
+        themeMode: ThemeMode.dark,
         home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );

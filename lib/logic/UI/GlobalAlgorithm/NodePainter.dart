@@ -20,7 +20,7 @@ class NodePainter extends CustomPainter {
     final RRect coreRRect = RRect.fromRectAndRadius(coreRect, Radius.circular(coreSize.height * 0.1));
     // 绘制核心节点
     final Paint paint = Paint()
-      ..color = nodeAppearance.nodeColor
+      ..color = Colors.red
       ..style = PaintingStyle.fill;
 
     switch(nodeAppearance.shape){

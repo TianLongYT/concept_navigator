@@ -24,6 +24,12 @@ class NodeDrawingData extends ChangeNotifier{
   int maxX = 4;
   //珠串排列模式
 
+  //子节点默认颜色。
+  Color? defaultConceptNodeColor;
+  Color? defaultConceptFontColor;
+
+
+
   NodeDrawingData Clone(){
     return NodeDrawingData(nodeAppearance: this.nodeAppearance.Clone())//深拷贝一个Drawingdata,防止干扰之前的。
       ..text = text
@@ -31,21 +37,25 @@ class NodeDrawingData extends ChangeNotifier{
       ..sortingMode = sortingMode
       ..maxX = maxX;
   }
-
-  //和节点群相关的一系列排版。
-  AddNodeDrawingData(){
-
+  Int2 calLastNodeInt2(){
     int num = 0;
     if(childrenNodePos.isNotEmpty){
       var lastdata = childrenNodePos.last;
       num = lastdata.x % maxX + lastdata.y * maxX +1;
     }
-    childrenNodePos.add(Int2(sortingMode == SortingMode.grid?num %maxX:num,sortingMode == SortingMode.grid?num~/maxX:0));
+    return Int2(sortingMode == SortingMode.grid?num %maxX:num,sortingMode == SortingMode.grid?num~/maxX:0);
+  }
+  //和节点群相关的一系列排版。
+  AddNodeDrawingData(){
+
+
+    childrenNodePos.add(calLastNodeInt2());
 
     notifyListeners();
-    print("addNode+ $num ");
+    //print("addNode+ $num ");
   }
   RemoveAtNodeDrawingData(int index){
+
     Int2 pos = childrenNodePos[index];
     int num = pos.x % maxX + pos.y* maxX;
     print("removeNode+$num");
@@ -53,7 +63,38 @@ class NodeDrawingData extends ChangeNotifier{
     childrenNodePos.removeAt(index);
     notifyListeners();
   }
+  RemoveAtNodeDrawingDataSqueeze(int index){
 
+    Int2 pos = childrenNodePos[index];
+    int num = pos.x % maxX + pos.y* maxX;
+    print("removeNode+$num");
+
+    // 核心修改：后方节点坐标前移
+    // 从 index + 1 开始，把坐标赋给 index
+    for (int i = childrenNodePos.length - 1; i > index ; i--) {
+      childrenNodePos[i] = childrenNodePos[i-1];
+    }
+    childrenNodePos.removeAt(index);
+    notifyListeners();
+  }
+  InsertNodeDrawingData(int index, Int2 pos){
+    childrenNodePos.insert(index, pos);
+    notifyListeners();
+  }
+  InsertNodeDrawingDataSqueeze(int index, Int2 pos){
+
+    // 核心修改：后方节点坐标前移
+    // 从 index + 1 开始，把坐标赋给 index
+    if(childrenNodePos.isNotEmpty){
+      for (int i = index; i < childrenNodePos.length - 1; i++) {
+        childrenNodePos[i] = childrenNodePos[i + 1];
+      }
+      childrenNodePos[childrenNodePos.length - 1] = calLastNodeInt2();
+    }
+    childrenNodePos.insert(index, pos);
+
+    notifyListeners();
+  }
   _ResortNode(){
 
     childrenNodePos.forEach((drawingData){
@@ -86,7 +127,49 @@ class NodeDrawingData extends ChangeNotifier{
       {required this.nodeAppearance
       });
 
+  void repaint() {
+    notifyListeners();
+  }
+  @override
+  String toString(){
+    return "childNodePos:"+childrenNodePos.toString();
+  }
 
+
+  Map<String, dynamic> toJson() {
+    return {
+      'text': text,
+      'childrenNodePos': childrenNodePos.map((e) => {'x': e.x, 'y': e.y}).toList(),
+      'sortingMode': sortingMode.index,
+      'maxX': maxX,
+      'appearance': nodeAppearance.toJson(),
+      'defaultConceptNodeColor': defaultConceptNodeColor?.value,
+      'defaultConceptFontColor': defaultConceptFontColor?.value,
+      'isDomain': false,
+    };
+  }
+
+  static NodeDrawingData fromJson(Map<String, dynamic> json) {
+    NodeDrawingData data;
+    var appearance = NodeAppearance.fromJson(json['appearance']);
+    if (json['isDomain'] == true) {
+      data = DomainDrawingData(nodeAppearance: appearance);
+      (data as DomainDrawingData).childrenDomainPos = (json['childrenDomainPos'] as List).map((e) => Int2(e['x'], e['y'])).toList();
+      data.domainSortingMode = SortingMode.values[json['domainSortingMode'] ?? 0];
+      data.domainMaxX = json['domainMaxX'] ?? 4;
+      data.defaultDomainNodeColor = json['defaultDomainNodeColor'] != null ? Color(json['defaultDomainNodeColor']) : null;
+      data.defaultDomainFontColor = json['defaultDomainFontColor'] != null ? Color(json['defaultDomainFontColor']) : null;
+    } else {
+      data = NodeDrawingData(nodeAppearance: appearance);
+    }
+    data.text = json['text'] ?? "";
+    data.childrenNodePos = (json['childrenNodePos'] as List).map((e) => Int2(e['x'], e['y'])).toList();
+    data.sortingMode = SortingMode.values[json['sortingMode'] ?? 0];
+    data.maxX = json['maxX'] ?? 4;
+    data.defaultConceptNodeColor = json['defaultConceptNodeColor'] != null ? Color(json['defaultConceptNodeColor']) : null;
+    data.defaultConceptFontColor = json['defaultConceptFontColor'] != null ? Color(json['defaultConceptFontColor']) : null;
+    return data;
+  }
 
 }
 class DomainDrawingData extends NodeDrawingData{
@@ -102,6 +185,10 @@ class DomainDrawingData extends NodeDrawingData{
   List<Int2> childrenDomainPos = [];//节点树与节点位置一一对应。
   SortingMode domainSortingMode = SortingMode.grid;
   int domainMaxX = 4;
+  //子节点默认颜色。
+  Color? defaultDomainNodeColor;
+  Color? defaultDomainFontColor;
+
 
   DomainDrawingData({ required super.nodeAppearance});
 
@@ -122,18 +209,69 @@ class DomainDrawingData extends NodeDrawingData{
     // TODO: implement AddNodeDrawingData
     return super.AddNodeDrawingData();
   }
-  AddDomainDrawingData(){
+  Int2 callLastDomainInt2(){
     int num = 0;
     if(childrenDomainPos.isNotEmpty){
       var lastdata = childrenDomainPos.last;
       num = lastdata.x % maxX + lastdata.y * maxX +1;
     }
-    childrenDomainPos.add(Int2(domainSortingMode == SortingMode.grid?num %maxX:num,domainSortingMode == SortingMode.grid?num~/maxX:0));
+    return Int2(domainSortingMode == SortingMode.grid?num %maxX:num,domainSortingMode == SortingMode.grid?num~/maxX:0);
+  }
+  AddDomainDrawingData(){
+
+    childrenDomainPos.add(callLastDomainInt2());
 
     notifyListeners();
-    print("addDomain+ $num ");
+    print("addDomain+ ${callLastDomainInt2()} ");
   }
 
+  RemoveAtDomainDrawingData(int index){
+    childrenDomainPos.removeAt(index);
+    notifyListeners();
+  }
+  RemoveAtDomainDrawingDataSqueeze(int index){
+    // 核心修改：后方节点坐标前移
+    // 从 index + 1 开始，把坐标赋给 index
+    for (int i = childrenDomainPos.length - 1; i > index ; i--) {
+      childrenDomainPos[i] = childrenDomainPos[i-1];
+    }
+    childrenDomainPos.removeAt(index);
+    notifyListeners();
+  }
+  InsertDomainDrawingData(int index, Int2 pos){
+    childrenDomainPos.insert(index, pos);
+    notifyListeners();
+  }
+  InsertDomainDrawingDataSqueeze(int index, Int2 pos){
+
+    // 核心修改：后方节点坐标前移
+    // 从 index + 1 开始，把坐标赋给 index
+    if(childrenDomainPos.isNotEmpty){
+      for (int i = index; i < childrenDomainPos.length - 1; i++) {
+        childrenDomainPos[i] = childrenDomainPos[i + 1];
+      }
+      childrenDomainPos[childrenDomainPos.length - 1] = callLastDomainInt2();
+    }
+
+    childrenDomainPos.insert(index, pos);
+    notifyListeners();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    json['isDomain'] = true;
+    json['childrenDomainPos'] = childrenDomainPos.map((e) => {'x': e.x, 'y': e.y}).toList();
+    json['domainSortingMode'] = domainSortingMode.index;
+    json['domainMaxX'] = domainMaxX;
+    json['defaultDomainNodeColor'] = defaultDomainNodeColor?.value;
+    json['defaultDomainFontColor'] = defaultDomainFontColor?.value;
+    return json;
+  }
+  @override
+  String toString() {
+    return "domainPos:${childrenDomainPos.toString()}" + super.toString();
+  }
 }
 
 enum SortingMode{
@@ -202,6 +340,21 @@ class NodeViewData extends ChangeNotifier{
 
   MoveScale(double scale){
     this.scale = scale;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'viewPosX': viewPosX,
+      'viewPosY': viewPosY,
+      'scale': scale,
+    };
+  }
+
+  static NodeViewData fromJson(Map<String, dynamic> json) {
+    return NodeViewData()
+      ..viewPosX = (json['viewPosX'] ?? 0.0).toDouble()
+      ..viewPosY = (json['viewPosY'] ?? 0.0).toDouble()
+      ..scale = (json['scale'] ?? 1.0).toDouble();
   }
 
 

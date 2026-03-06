@@ -7,7 +7,7 @@ import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/UI/AddressBar/AddressBar.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/EditorPanel.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/CustomGesture/PanGestureDetector.dart';
-import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:concept_navigator/logic/UI/LevelDomain.dart';
 import 'package:concept_navigator/logic/UI/LevelNode.dart';
 import 'package:concept_navigator/logic/UI/LevelNodePresentation.dart';
@@ -27,6 +27,7 @@ class Nodepanel extends StatefulWidget {
 class _NodepanelState extends State<Nodepanel> {
   //制作levelNode的排版功能。显示所有的levelNode。
   bool isScaling = false;
+  bool _isManualPop = false; // 手动弹出状态
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +44,7 @@ class _NodepanelState extends State<Nodepanel> {
     //节点位置助手
     NodePositionHelper nodePositionHelper = NodePositionHelper(treeModel: treeModel, domainDrawingDataDic: domainDrawingDataDic, nodeDrawingDataDic: nodeDrawingDataDic, viewDrawingDataDic: viewDataDic);
     nodePositionHelper.InitData(selection.IsInDomain, selection.currentDomain, selection.CurrentDomainNodeKey);
+    print("初始化NodePositiongHelper ,selection :isInDomain:${selection.IsInDomain},currentDomainNodeKey:${selection.CurrentDomainNodeKey}");
     //获取视口数据
     final NodeViewData? nodeViewData = viewDataDic.GetNodeViewData(selection.CurrentDomainNodeKey);
     if(nodeViewData == null) return ErrorWidget("exception,节点绘制主界面没找到nodeviewData，检查参数配置");
@@ -114,7 +116,7 @@ class _NodepanelState extends State<Nodepanel> {
     //
     // }
 
-    print("MainNodePanel重新绘制stackModel,节点树"+treeModel.PrintTree() + "\r\n概念树字典${treeModel.PrintDic()}"+"\r\n节点名到渲染物"+nodeDrawingDataDic.toString()+"\r\n当前域绘制物${nodePositionHelper.domainDrawingData?.childrenNodePos}");
+    print("MainNodePanel重新绘制stackModel,节点树"+treeModel.PrintTree() + "\r\n概念树字典${treeModel.PrintDic()}"+"\r\n节点名到概念渲染物"+nodeDrawingDataDic.toString()+"\r\n域渲染物${domainDrawingDataDic.toString()}"+"\r\n当前域绘制物${nodePositionHelper.domainDrawingData?.childrenNodePos}");
     final Widget editorPanel = GestureDetector(
       onTap: (){
         print("onTapEditor");
@@ -127,6 +129,12 @@ class _NodepanelState extends State<Nodepanel> {
           if(editingStateModel.State == EditingState.waitingMovingTarget || editingStateModel.State == EditingState.selectingMovingNode){
             //globalStateModel.State = GlobalState.normal;
             return;
+          }
+
+          if (_isManualPop) {
+            setState(() {
+              _isManualPop = false;
+            });
           }
 
           if(selection.IsSelecting) {
@@ -175,13 +183,13 @@ class _NodepanelState extends State<Nodepanel> {
 
 
       return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints){
-        bool isPop = globalStateModel.State != GlobalState.normal;
+        bool isPop = (globalStateModel.State != GlobalState.normal) || _isManualPop;
         // 获取屏幕方向
         bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
         double landscapeContractWidth = 100;
         double landscapePopWidth = 200;
-        double portraitContractHeight = 10;
+        double portraitContractHeight = 10+50;
         double portraitPopHeight = 300;
 
         double centerLeft = 100;
@@ -223,6 +231,9 @@ class _NodepanelState extends State<Nodepanel> {
                         offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
                         child: LevelDomain(
                           scale: scale,
+                          parentConceptDrawingData: null,
+                          parentDomainDrawingData: nodePositionHelper.domainDrawingData,
+
                           drawingData: nodePositionHelper.childDomainDrawingData!,
                           domainTree: nodeTreeMap.value!,
                           parentNodeTree: domainTree,
@@ -253,6 +264,8 @@ class _NodepanelState extends State<Nodepanel> {
                         offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
                         child: LevelNode(
                           scale: scale,
+                          parentConceptDrawingData: null,
+                          parentDomainDrawingData: nodePositionHelper.domainDrawingData,
                           drawingData: nodePositionHelper.childNodeDrawingData!,
                           nodeTree: nodeTreeMap.value!,
                           parentNodeTree: domainTree,
@@ -279,6 +292,8 @@ class _NodepanelState extends State<Nodepanel> {
                     offset: Offset( nodeViewData.viewPosX * scale,  nodeViewData.viewPosY * scale),
                     child: LevelNode(
                       scale: scale,
+                      parentConceptDrawingData: nodePositionHelper.nodeDrawingData,
+                      parentDomainDrawingData: null,
                       drawingData: nodePositionHelper.childNodeDrawingData!,
                       nodeTree: nodeTreeMap.value!,
                       parentNodeTree: nodeTree,
@@ -293,6 +308,11 @@ class _NodepanelState extends State<Nodepanel> {
         Widget MainNodePanelWithGesture = CustomScaleGestureDetector(
 
           onStart: (startDetails){
+            if (_isManualPop) {
+              setState(() {
+                _isManualPop = false;
+              });
+            }
             nodeViewData.SaveCurData();
             viewDataDic.repaint();
 
@@ -323,6 +343,11 @@ class _NodepanelState extends State<Nodepanel> {
 
             onPointerPanZoomStart: (PointerPanZoomStartEvent details)//专门处理触摸板用的。
             {
+              if (_isManualPop) {
+                setState(() {
+                  _isManualPop = false;
+                });
+              }
               nodeViewData.SaveCurData();
               viewDataDic.repaint();
               print("**********************************************Scale Start");
@@ -351,6 +376,22 @@ class _NodepanelState extends State<Nodepanel> {
           landscapeContractWidth: landscapeContractWidth,
           landscapeHeight:constraints.maxHeight,
           portraitWidth: constraints.maxWidth,
+          onExpandRequest: () {
+            if (!_isManualPop) {
+              setState(() {
+                _isManualPop = true;
+              });
+            }
+          },
+          onCollapseRequest: () {
+            if (globalStateModel.State != GlobalState.normal) {
+              globalStateModel.State = GlobalState.normal;
+              selection.CancelSelection();
+            }
+            setState(() {
+              _isManualPop = false;
+            });
+          },
           child: editorPanel,
         );
 

@@ -1,5 +1,8 @@
+import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
+import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
+import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
@@ -104,9 +107,12 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
   @override
   Widget build(BuildContext context) {
     ConceptTreeModel treeModel = context.watch<ConceptTreeModel>();
+    GlobalStateModel globalState = context.read<GlobalStateModel>();
+    AddressBarModel addressBar = context.read<AddressBarModel>();
     ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
-    ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
+    ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.read<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
+    CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
 
     return Column(
       children: [
@@ -154,9 +160,19 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
           OutlinedButton(
               onPressed:hasError||hasNoChange?null: (){
                 bool hasSameConcept = false;
-                bool needChoseChildren = false;
+                bool chosenReference = false;
 
-                String newDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain,controller.text,aliasController.text);
+                ConceptNodeTree? selectedConceptNode = selection.SelectedConceptNode;
+                if(selectedConceptNode == null){
+                  throw Exception("当前节点没有选中ConceptNode");
+                }
+                String oldName = selection.SelectedConceptNode!.name;
+                String oldAlias = selection.SelectedConceptNode!.alias;
+                String newName = controller.text;
+                String newAlias = aliasController.text;
+                String oldDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, oldName, oldAlias);
+                String newDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, newName, newAlias);
+
                 //风险判断。
                 //新命名的概念名已经存在域中。
                 //如果当前节点没有子物体。直接成为引用。
@@ -165,57 +181,128 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                   if(treeModel.ContainConceptNode(newDomainNodeKey)){
                     //存在同概念名节点，观察双方子节点数量。
                     hasSameConcept = true;
-
+                    if(selectedConceptNode.children.isNotEmpty){
+                      //弹窗，选择是成为引用，还是才成为新的根节点。
+                      chosenReference = true;
+                    }
                   }
                 }
                 else{
                   if(treeModel.ContainConceptNode(newDomainNodeKey)){
-                    //同一域中不能存在概念名和别名都相同的节点。
+                    //同一域中不能存在概念名和别名都相同的节点。在UI层解决,hasError。
+                    return;
                   }
                 }
-                String name = selection.SelectedConceptNode!.name;
-                String alias = selection.SelectedConceptNode!.alias;
-                String domainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, name, alias);
 
-                NodeDrawingData? lastDrawingData = nodeDrawingDataDic.GetNodeDrawingData(domainNodeKey);
+
+                NodeDrawingData? lastDrawingData = nodeDrawingDataDic.GetNodeDrawingData(oldDomainNodeKey);
                 if(lastDrawingData == null){
                   print("错误，概念编辑面板找不到修改前的渲染数据");
                   return;
                 }
-                NodeViewData? lastViewData = viewDataDic.GetNodeViewData(domainNodeKey);
+                NodeViewData? lastViewData = viewDataDic.GetNodeViewData(oldDomainNodeKey);
                 if(lastViewData == null){
                   print("EditingConceptPanel找不到当前修改节点的NodeViewData");
                   return;
                 }
 
-
-
-                //设置节点名和别名。
-                selection.SelectedConceptNode!.name = controller.text;
-                selection.SelectedConceptNode!.alias = aliasController.text;
-
-                //设置渲染物体。
-                NodeDrawingData newDrawingData = lastDrawingData.Clone();
-                newDrawingData.text = controller.text;
-
-                NodeViewData newViewData = lastViewData.Clone();
-
-                if(hasSameConcept == false) {
-                  nodeDrawingDataDic.putIfAbsent(newDomainNodeKey, ()=>newDrawingData);
-                  viewDataDic.putIfAbsent(newDomainNodeKey, ()=>newViewData);
-                }
-                else if(needChoseChildren == false){
-                  print("存在重名概念，将自身设置成引用");//这里还是有问题。
-                  selection.SelectedConceptNode!.children.clear();
+                List<ConceptNodeTree> childrenBackup = [];
+                if(hasSameConcept){
+                  childrenBackup = selectedConceptNode.children;
                 }
 
-                treeModel.GenerateDic();
+                void doRename() {
+                  //设置节点名和别名。
+                  selectedConceptNode.name = newName;
+                  selectedConceptNode.alias = newAlias;
+                  treeModel.GenerateDic();
+                  if(hasSameConcept == false) {
+                    //将要成为的节点中，没有出现相同节点。直接完成交换即可。
+                    //设置渲染物体。
+                    NodeDrawingData newDrawingData = lastDrawingData.Clone();
+                    newDrawingData.text = newName;
 
+                    NodeViewData newViewData = lastViewData.Clone();
+                    nodeDrawingDataDic.putIfAbsent(newDomainNodeKey, () => newDrawingData);
+                    viewDataDic.putIfAbsent(newDomainNodeKey, () => newViewData);
+
+                    if(!treeModel.ContainConceptNode(oldDomainNodeKey)) {
+                      nodeDrawingDataDic.remove(oldDomainNodeKey);
+                      viewDataDic.remove(oldDomainNodeKey);
+                    }
+                  }
+                  else{
+                    if(chosenReference){
+                      //选择成为引用。清除子节点。
+                      print("存在重名概念，将自身设置成引用");
+                      selectedConceptNode.children.clear();
+                    }
+                    else{
+                      print("将自身设置成根节点");
+                      //重新构建字典,将children移动到根部位置。？？？或者可以自由设置根部位置。确保非根部的children为空就行。
+
+                    }
+                  }
+
+                  selection.SelectAndFocusNode(
+                    selectedNode: selectedConceptNode,
+                    parent: selectedConceptNode.parent!,
+                    globalState: globalState,
+                    addressBar: addressBar,
+                    treeModel: treeModel,
+                    nodeDrawingDataDic: nodeDrawingDataDic,
+                    domainDrawingDataDic: domainDrawingDataDic,
+                    viewDrawingDataDic: viewDataDic,
+                  );
+                }
+                void undoRename(){
+                  //设置节点名和别名。
+                  selectedConceptNode.name = oldName;
+                  selectedConceptNode.alias = oldAlias;
+                  treeModel.GenerateDic();
+
+                  if(hasSameConcept == false) {
+                    //将要成为的节点中，没有出现相同节点。直接完成交换即可。
+                    //设置渲染物体。
+                    if(!treeModel.ContainConceptNode(newDomainNodeKey)) {
+                      nodeDrawingDataDic.remove(newDomainNodeKey);
+                      viewDataDic.remove(newDomainNodeKey);
+                    }
+
+                    nodeDrawingDataDic.putIfAbsent(oldDomainNodeKey, () => lastDrawingData);
+                    viewDataDic.putIfAbsent(oldDomainNodeKey, () => lastViewData);
+                  }
+                  else{
+                    if(chosenReference){
+                      //选择成为引用。清除子节点。
+                      print("存在重名概念，将自身设置成引用");
+                      selectedConceptNode.children = childrenBackup;
+                    }
+                    else{
+                      print("将自身设置成根节点");
+                      //重新构建字典,将children移动到根部位置。？？？或者可以自由设置根部位置。确保非根部的children为空就行。
+
+                    }
+                  }
+
+                  selection.SelectAndFocusNode(
+                    selectedNode: selectedConceptNode,
+                    parent: selectedConceptNode.parent!,
+                    globalState: globalState,
+                    addressBar: addressBar,
+                    treeModel: treeModel,
+                    nodeDrawingDataDic: nodeDrawingDataDic,
+                    domainDrawingDataDic: domainDrawingDataDic,
+                    viewDrawingDataDic: viewDataDic,
+                  );
+                }
+
+                doRename();
                 print("打印节点字典"+treeModel.PrintDic());
-                if(!treeModel.ContainConceptNode(domainNodeKey)) {
-                  nodeDrawingDataDic.remove(domainNodeKey);
-                  viewDataDic.remove(domainNodeKey);
-                }
+                commandManager.PushCommand(commandManager.editInstance, Command(
+                  function: () => doRename(),
+                  undoFunction: () => undoRename(),
+                ));
 
               },
               child: Text("修改概念名")

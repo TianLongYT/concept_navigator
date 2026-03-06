@@ -11,7 +11,7 @@ import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
-import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodePosition.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GlobalCoroutine.dart';
 
 import 'package:concept_navigator/logic/UI/LevelNodePresentation.dart';
@@ -22,8 +22,10 @@ import 'package:provider/provider.dart';
 
 class LevelNode extends StatelessWidget {
 
-  LevelNode({super.key,double scale = 1.0, required this.drawingData, required this.nodeTree, required this.parentNodeTree}):
+  LevelNode({super.key,double scale = 1.0,required this.parentConceptDrawingData,required this.parentDomainDrawingData, required this.drawingData, required this.nodeTree, required this.parentNodeTree}):
     _scale = scale;
+  final NodeDrawingData? parentConceptDrawingData;//仅仅传入父节点绘制物的推荐颜色。
+  final DomainDrawingData? parentDomainDrawingData;
   final NodeDrawingData drawingData;
   final NodeTree parentNodeTree;
   final ConceptNodeTree nodeTree;
@@ -50,7 +52,7 @@ class LevelNode extends StatelessWidget {
 
     //获取当前位置。
 
-    FocusNodeHelper focusNodeHelper = FocusNodeHelper(context,parentNodeTree.IsInDomain, parentNodeTree.GetDomainKey(), parentNodeTree.GetDomainNodeKey(),allSize);
+    FocusNodeHelper focusNodeHelper = FocusNodeHelper(context,parentNodeTree.IsInDomain, parentNodeTree.GetDomainKey(), parentNodeTree.GetDomainNodeKey(),nodeAllSize:  allSize);
 
 
     //drawingData.text = nodeTree.name;
@@ -134,7 +136,7 @@ class LevelNode extends StatelessWidget {
                 // child: Transform.scale(
                 //   alignment: Alignment.topLeft,
                 //   scale: _scale,
-                  child: LevelNodePresentation(isInDomain: false,drawingData: drawingData,scale: _scale,nodeTree: nodeTree,domainTree: null,),
+                  child: LevelNodePresentation(isDomain: false,parentConceptDrawingData: parentConceptDrawingData,parentDomainDrawingData: parentDomainDrawingData,drawingData: drawingData,scale: _scale,nodeTree: nodeTree,domainTree: null,),
                 //),
 
 

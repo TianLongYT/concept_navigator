@@ -1,6 +1,7 @@
 import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/DeleteNodeLogic.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -27,6 +28,9 @@ class _MFloatingButtonState extends State<MFloatingButton> {
     CommandManager? chooseCommandMananger;
 
     bool disableUndo = false;
+    chooseCommandMananger = commandManager.editInstance;//默认选择editInstance.
+    commandManager.printCommandManager(chooseCommandMananger);
+    //压缩Y方向。
     if(editingStateModel.State == EditingState.selectingMovingNode ||
         editingStateModel.State == EditingState.waitingMovingTarget ||
         editingStateModel.State == EditingState.squeezingNode
@@ -36,8 +40,14 @@ class _MFloatingButtonState extends State<MFloatingButton> {
       _isExpandedY = false;
     }
     else{
+      if(editingStateModel.State == EditingState.coloringNode){
+        _isExpandedY = false;
+      }
+
       _isExpandedY = true;
     }
+
+
 
 
 
@@ -74,7 +84,9 @@ class _MFloatingButtonState extends State<MFloatingButton> {
             duration: Duration(milliseconds: 200),
             child: FloatingActionButton(
               onPressed:_isExpanded && _isExpandedY?(){
-            
+                DeleteNodeLogic.deleteSelectedNode(context);
+                globalStateModel.State = GlobalState.normal;
+                selection.CancelSelection();
               }:null,
             
               backgroundColor: Colors.red,

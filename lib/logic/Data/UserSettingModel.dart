@@ -23,10 +23,13 @@ class FontAppearance{
 class NodeAppearance{
   //节点绘制数据
 
+  // 显式添加默认构造函数，因为 factory fromJson 存在
+  NodeAppearance();
+
   //节点形状
   Shape shape = Shape.rRect;
   //节点颜色
-  Color nodeColor = Colors.white.withAlpha(200);
+  Color? nodeColor;
   //核心节点大小
   Size nodeSize = Size(100*1.3,100);
   //留白。。。。
@@ -34,7 +37,7 @@ class NodeAppearance{
 
   //字体形状
   //字体颜色
-  Color fontColor = Colors.black;
+  Color? fontColor;
   //字体自适应大小
   double minFontSize = 20;
   double maxFontSize = 100;
@@ -54,12 +57,45 @@ class NodeAppearance{
       ..nodeSize = nodeSize
       ..emptySize = emptySize
       ..fontColor = fontColor
-      ..minFontSize = maxFontSize
+      ..minFontSize = minFontSize
+      ..maxFontSize = maxFontSize
       ..minShowingLevel = minShowingLevel
       ..maxShowingLevel = maxShowingLevel
       ..minChildNodeSize = minChildNodeSize
       ..sortingMode = sortingMode;
 
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'shape': shape.index,
+      'nodeColor': nodeColor?.value,
+      'nodeWidth': nodeSize.width,
+      'nodeHeight': nodeSize.height,
+      'emptySize': emptySize,
+      'fontColor': fontColor?.value,
+      'minFontSize': minFontSize,
+      'maxFontSize': maxFontSize,
+      'minShowingLevel': minShowingLevel,
+      'maxShowingLevel': maxShowingLevel,
+      'minChildNodeSize': minChildNodeSize,
+      'sortingMode': sortingMode.index,
+    };
+  }
+
+  factory NodeAppearance.fromJson(Map<String, dynamic> json) {
+    return NodeAppearance()
+      ..shape = Shape.values[json['shape'] ?? Shape.rRect.index]
+      ..nodeColor = json['nodeColor'] != null ? Color(json['nodeColor']) : null
+      ..nodeSize = Size((json['nodeWidth'] ?? 130).toDouble(), (json['nodeHeight'] ?? 100).toDouble())
+      ..emptySize = (json['emptySize'] ?? 1.4).toDouble()
+      ..fontColor = json['fontColor'] != null ? Color(json['fontColor']) : null
+      ..minFontSize = (json['minFontSize'] ?? 20).toDouble()
+      ..maxFontSize = (json['maxFontSize'] ?? 100).toDouble()
+      ..minShowingLevel = json['minShowingLevel'] ?? 2
+      ..maxShowingLevel = json['maxShowingLevel'] ?? 4
+      ..minChildNodeSize = (json['minChildNodeSize'] ?? 80).toDouble()
+      ..sortingMode = SortingMode.values[json['sortingMode'] ?? SortingMode.none.index];
   }
 
 }
@@ -77,3 +113,50 @@ class UserSettingAppearanceModel extends ChangeNotifier{
 
 
 //
+// lib/logic/Theme/NodeColorsExtension.dart
+
+
+class NodeColorsExtension extends ThemeExtension<NodeColorsExtension> {
+  final Color defaultConceptNodeColor;
+  late Color defaultConceptFontColor;
+  final Color defaultDomainNodeColor;
+  late Color defaultDomainFontColor;
+
+
+  NodeColorsExtension(
+  {   Color? defaultConceptFontColor,
+     Color? defaultDomainFontColor,
+  required this.defaultConceptNodeColor,
+    required this.defaultDomainNodeColor,
+  }):defaultConceptFontColor =defaultConceptFontColor ??(defaultConceptNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white),
+      defaultDomainFontColor = defaultDomainFontColor ?? (defaultDomainNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white)
+  ;
+
+
+  @override
+  ThemeExtension<NodeColorsExtension> copyWith(
+      {Color? conceptNode, Color? domainNode,Color? conceptFont,Color? domainFont}) {
+    return NodeColorsExtension(
+      defaultConceptFontColor: conceptFont ?? defaultConceptFontColor,
+      defaultDomainFontColor: domainFont ?? defaultDomainFontColor,
+      defaultConceptNodeColor: conceptNode ?? defaultConceptNodeColor,
+      defaultDomainNodeColor: domainNode ?? defaultDomainNodeColor,
+    );
+  }
+
+  @override
+  ThemeExtension<NodeColorsExtension> lerp(
+      ThemeExtension<NodeColorsExtension>? other, double t) {
+    if (other is! NodeColorsExtension) return this;
+    return NodeColorsExtension(
+      defaultConceptFontColor: Color.lerp(
+          defaultConceptFontColor, other.defaultConceptFontColor, t)!,
+      defaultDomainFontColor: Color.lerp(
+          defaultDomainFontColor, other.defaultDomainFontColor, t)!,
+      defaultConceptNodeColor: Color.lerp(
+          defaultConceptNodeColor, other.defaultConceptNodeColor, t)!,
+      defaultDomainNodeColor: Color.lerp(
+          defaultDomainNodeColor, other.defaultDomainNodeColor, t)!,
+    );
+  }
+}
