@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data'; // 1. 引入字节流处理
+import 'package:concept_navigator/logic/Data/ConceptDecoration.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
+import 'package:concept_navigator/logic/Data/OriginDataModel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb; // 用于判断 Web 环境
@@ -35,15 +37,17 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
     String? path,
   }) async {
     try {
       final Map<String, dynamic> fullData = {
-        'version': '1.0',
+        'version': '1.1',
         'tree': treeModel.toJson(),
         'nodeDrawingDic': nodeDrawingDic.data.map((key, value) => MapEntry(key, value.toJson())),
         'domainDrawingDic': domainDrawingDic.data.map((key, value) => MapEntry(key, value.toJson())),
         'nodeViewDic': nodeViewDic.data.map((key, value) => MapEntry(key, value.toJson())),
+        'decorationDic': decorationDic.toJson(),
       };
 
       String? targetPath = path ?? currentFilePath;
@@ -69,6 +73,7 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
     String? path,
   }) async {
     try {
@@ -93,7 +98,8 @@ class PersistenceLogic {
           treeModel: treeModel,
           nodeDrawingDic: nodeDrawingDic,
           domainDrawingDic: domainDrawingDic,
-          nodeViewDic: nodeViewDic
+          nodeViewDic: nodeViewDic,
+          decorationDic: decorationDic
       );
 
       // 加载成功后更新当前路径
@@ -113,6 +119,7 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
   }) {
     // 1. 加载逻辑树并重建搜索字典
     if (fullData['tree'] != null) {
@@ -147,6 +154,13 @@ class PersistenceLogic {
       });
       nodeViewDic.data = newNodeView;
     }
+
+    // 5. 加载修饰词字典
+    if (fullData['decorationDic'] != null) {
+      decorationDic.fromJson(fullData['decorationDic']);
+    } else {
+      decorationDic.clear();
+    }
   }
 
   /// 获取私有目录下所有的保存文件列表
@@ -170,6 +184,7 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
   }) async {
     final path = await _localPath;
     // 确保有 .json 后缀
@@ -179,6 +194,7 @@ class PersistenceLogic {
       nodeDrawingDic: nodeDrawingDic,
       domainDrawingDic: domainDrawingDic,
       nodeViewDic: nodeViewDic,
+      decorationDic: decorationDic,
       path: '$path/$finalName',
     );
   }
@@ -188,6 +204,7 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
   }) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -201,6 +218,7 @@ class PersistenceLogic {
           nodeDrawingDic: nodeDrawingDic,
           domainDrawingDic: domainDrawingDic,
           nodeViewDic: nodeViewDic,
+          decorationDic: decorationDic,
           path: result.files.single.path,
         );
       } else if (result != null && result.files.single.bytes != null) {
@@ -213,7 +231,8 @@ class PersistenceLogic {
             treeModel: treeModel,
             nodeDrawingDic: nodeDrawingDic,
             domainDrawingDic: domainDrawingDic,
-            nodeViewDic: nodeViewDic
+            nodeViewDic: nodeViewDic,
+            decorationDic: decorationDic
         );
 
         currentFilePath = result.files.single.name; // Web 端记录文件名作为路径参考
@@ -235,15 +254,17 @@ class PersistenceLogic {
     required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
     required ConceptTree2DomainDrawingDataDic domainDrawingDic,
     required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
   }) async {
     try {
       // 1. 序列化数据
       final Map<String, dynamic> fullData = {
-        'version': '1.0',
+        'version': '1.1',
         'tree': treeModel.toJson(),
         'nodeDrawingDic': nodeDrawingDic.data.map((key, value) => MapEntry(key, value.toJson())),
         'domainDrawingDic': domainDrawingDic.data.map((key, value) => MapEntry(key, value.toJson())),
         'nodeViewDic': nodeViewDic.data.map((key, value) => MapEntry(key, value.toJson())),
+        'decorationDic': decorationDic.toJson(),
       };
 
       // 2. 转换成字节数组 (满足 Android/iOS/Web 的 saveFile 要求)
@@ -276,6 +297,148 @@ class PersistenceLogic {
       }
     } catch (e) {
       print("Persistence Error (saveWithPicker): $e");
+    }
+  }
+
+  /// 导出为初始格式文件 (OriginDataModel)
+  static Future<void> saveOriginData({
+    required ConceptTreeModel treeModel,
+    required ConceptTree2ConceptDecorationDic decorationDic,
+    String? path,
+  }) async {
+    try {
+      final originModel = OriginDataModel.fromAppState(
+        treeModel: treeModel,
+        decorationDic: decorationDic,
+      );
+
+      String? targetPath = path;
+      if (targetPath == null) {
+        final directory = await getApplicationDocumentsDirectory();
+        targetPath = '${directory.path}/origin_data.json';
+      }
+
+      final File file = File(targetPath);
+      // 使用 JsonEncoder.withIndent('  ') ('\t')进行格式化 pretty print
+      const encoder = JsonEncoder.withIndent('\t');
+      await file.writeAsString(encoder.convert(originModel.toJson()));
+      // 正常打印
+      //await file.writeAsString(jsonEncode(originModel.toJson()));
+      print("Persistence: Origin data exported to ${file.path}");
+    } catch (e) {
+      print("Persistence Error (saveOriginData): $e");
+    }
+  }
+
+  /// 从初始格式文件加载 (OriginDataModel)
+  static Future<LoadResult> loadOriginData({
+    required ConceptTreeModel treeModel,
+    required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
+    required ConceptTree2DomainDrawingDataDic domainDrawingDic,
+    required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
+    String? path,
+  }) async {
+    try {
+      if (path == null) return LoadResult.failure;
+      final file = File(path);
+      if (!await file.exists()) return LoadResult.failure;
+
+      final String content = await file.readAsString();
+      final Map<String, dynamic> json = jsonDecode(content);
+      final originModel = OriginDataModel.fromJson(json);
+
+      originModel.applyOriginData(
+        treeModel: treeModel,
+        nodeDrawingDic: nodeDrawingDic,
+        domainDrawingDic: domainDrawingDic,
+        nodeViewDic: nodeViewDic,
+        decorationDic: decorationDic,
+      );
+
+      print("Persistence: Origin data loaded from $path");
+      return LoadResult.success;
+    } catch (e) {
+      print("Persistence Error (loadOriginData): $e");
+      return LoadResult.failure;
+    }
+  }
+
+  /// 使用选择器导出初始文件
+  static Future<void> saveOriginWithPicker({
+    required ConceptTreeModel treeModel,
+    required ConceptTree2ConceptDecorationDic decorationDic,
+  }) async {
+    try {
+      final originModel = OriginDataModel.fromAppState(
+        treeModel: treeModel,
+        decorationDic: decorationDic,
+      );
+      // 使用 JsonEncoder.withIndent('  ') 或者('\t') 进行格式化
+      const encoder = JsonEncoder.withIndent('\t');
+      final String prettyJson = encoder.convert(originModel.toJson());
+      final Uint8List bytes = Uint8List.fromList(utf8.encode(prettyJson));
+      // 正常打印
+      //final Uint8List bytes = Uint8List.fromList(utf8.encode(jsonEncode(originModel.toJson())));
+
+      String? result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Origin Data',
+        fileName: 'origin_data.json',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        bytes: bytes,
+      );
+
+      if (result != null) {
+        if (!result.toLowerCase().endsWith('.json')) result = '$result.json';
+        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+          await File(result).writeAsBytes(bytes);
+        }
+      }
+    } catch (e) {
+      print("Persistence Error (saveOriginWithPicker): $e");
+    }
+  }
+
+  /// 使用选择器加载初始文件
+  static Future<LoadResult> loadOriginWithPicker({
+    required ConceptTreeModel treeModel,
+    required ConceptTree2NodeDrawingDataDic nodeDrawingDic,
+    required ConceptTree2DomainDrawingDataDic domainDrawingDic,
+    required ConceptTree2NodeViewDataDic nodeViewDic,
+    required ConceptTree2ConceptDecorationDic decorationDic,
+  }) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        return await loadOriginData(
+          treeModel: treeModel,
+          nodeDrawingDic: nodeDrawingDic,
+          domainDrawingDic: domainDrawingDic,
+          nodeViewDic: nodeViewDic,
+          decorationDic: decorationDic,
+          path: result.files.single.path,
+        );
+      } else if (result != null && result.files.single.bytes != null) {
+        final content = utf8.decode(result.files.single.bytes!);
+        final originModel = OriginDataModel.fromJson(jsonDecode(content));
+        originModel.applyOriginData(
+          treeModel: treeModel,
+          nodeDrawingDic: nodeDrawingDic,
+          domainDrawingDic: domainDrawingDic,
+          nodeViewDic: nodeViewDic,
+          decorationDic: decorationDic,
+        );
+        return LoadResult.success;
+      }
+      return LoadResult.cancelled;
+    } catch (e) {
+      print("Persistence Error (loadOriginWithPicker): $e");
+      return LoadResult.failure;
     }
   }
 }

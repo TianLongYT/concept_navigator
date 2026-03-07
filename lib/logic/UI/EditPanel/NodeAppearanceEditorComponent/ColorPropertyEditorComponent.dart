@@ -59,57 +59,76 @@ class _ColorPropertyEditorState extends State<ColorPropertyEditor> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Icon(widget.icon, size: 24),
-              const SizedBox(width: 12),
-              Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              // 复原按钮
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.refresh, size: 20),
-                onPressed: widget.color == null ? null : widget.onReset,
-              ),
-              const SizedBox(width: 4),
-              if (editorState == 0)
-                ColorIndicator(
-                  width: 35,
-                  height: 35,
-                  borderRadius: 4,
-                  color: widget.displayColor,
-                  onSelect: () {
-                    setState(() {
-                      _originalColor = widget.color;
-                      _tempSelectColor = widget.color ?? Colors.blue;
-                      editorState = 1;
-                    });
-                    widget.onStartEdit();
-                  },
-                )
-              else
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      onPressed: () {
-                        widget.onChanged(_originalColor); // 恢复原状
-                        setState(() => editorState = 0);
-                        widget.onEndEdit();
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.green),
-                      onPressed: () {
-                        widget.onConfirm(_originalColor, _tempSelectColor);
-                        setState(() => editorState = 0);
-                        widget.onEndEdit();
-                      },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 策略：如果总宽度太小，先隐藏文字；如果文字显示但太长，则截断。
+              bool showText = constraints.maxWidth > 160;
+
+              return Row(
+                children: [
+                  Icon(widget.icon, size: 24),
+                  if (showText) ...[
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ],
-                ),
-              if (editorState == 0) const SizedBox(width: 50),
-            ],
+                  const Spacer(),
+                  // 复原按钮
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    onPressed: widget.color == null ? null : widget.onReset,
+                  ),
+                  const SizedBox(width: 4),
+                  if (editorState == 0)
+                    ColorIndicator(
+                      width: 35,
+                      height: 35,
+                      borderRadius: 4,
+                      color: widget.displayColor,
+                      onSelect: () {
+                        setState(() {
+                          _originalColor = widget.color;
+                          _tempSelectColor = widget.color ?? Colors.blue;
+                          editorState = 1;
+                        });
+                        widget.onStartEdit();
+                      },
+                    )
+                  else
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () {
+                            widget.onChanged(_originalColor); // 恢复原状
+                            setState(() => editorState = 0);
+                            widget.onEndEdit();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.check, color: Colors.green),
+                          onPressed: () {
+                            widget.onConfirm(_originalColor, _tempSelectColor);
+                            setState(() => editorState = 0);
+                            widget.onEndEdit();
+                          },
+                        ),
+                      ],
+                    ),
+                  // 在空间不足时缩减右侧边距
+                  if (editorState == 0)
+                    SizedBox(width: constraints.maxWidth > 280 ? 50 : 8),
+                ],
+              );
+            },
           ),
         ),
         AnimatedCrossFade(

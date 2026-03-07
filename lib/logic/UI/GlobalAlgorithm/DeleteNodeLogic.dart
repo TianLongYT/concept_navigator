@@ -102,7 +102,7 @@ class DeleteNodeLogic {
 
         selection.CancelSelectionAndJumpOutParent(
           selectedNode: conceptToDelete,
-          parent: conceptToDelete.parent!,
+          parent: conceptToDelete.parent,
           globalState: globalState,
           addressBar: addressBar,
           treeModel: treeModel,

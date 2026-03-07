@@ -3,6 +3,7 @@
 import 'package:concept_navigator/MTools/MMath.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeAppearanceEditorComponent/NodeAppearanceEditorComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeAppearanceEditorComponent/NodeGroupEditorComponent.dart';
+import 'package:concept_navigator/logic/UI/EditPanel/NodeDecorationEditorComponent/NodeDecorationEditorComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeMoveComponent/NodeMoveComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeRenameComponent/ConceptRenameComponent.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeRenameComponent/DomainRenameComponent.dart';
@@ -28,7 +29,7 @@ class StatefulComponentModel{
   StatefulComponentModel.nodeAppearanceEditorComponent():title = "节点外观",icon = Icons.style,child = NodeAppearanceEditorComponent();
   StatefulComponentModel.nodeGroupEditorComponent():title = "节点组设置",icon = Icons.settings,child = NodeGroupEditorComponent();
   StatefulComponentModel.nodeSearchComponent():title = "节点查找",icon = Icons.settings,child = NodeSearchComponent();
-
+  StatefulComponentModel.nodeDecorateComponent():title = "概念修饰词",icon = Icons.star_half_sharp,child = NodeDecorationEditorComponent();
 }
 class StatefulComponentManagerModel{
   List<StatefulComponentModel> components;
@@ -81,6 +82,7 @@ class StatefulComponentManagerModelForProvider extends ChangeNotifier{
   }):editingConceptPanel = editingConceptPanel?? StatefulComponentManagerModel(
       components: [
         StatefulComponentModel.conceptRenamingComponent(),
+        StatefulComponentModel.nodeDecorateComponent(),
         StatefulComponentModel.nodeMovingComponent(),
         StatefulComponentModel.nodeAppearanceEditorComponent(),
       ]

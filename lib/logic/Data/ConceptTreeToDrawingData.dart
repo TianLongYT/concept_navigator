@@ -26,9 +26,10 @@ class ConceptTree2NodeDrawingDataDic extends ChangeNotifier{
 
     return null;
   }
-  putIfAbsent(String key , NodeDrawingData Function() ifAbsent){
-    _name2NodeDrawingData.putIfAbsent(key, ifAbsent);
+  NodeDrawingData putIfAbsent(String key , NodeDrawingData Function() ifAbsent){
+    final tmp = _name2NodeDrawingData.putIfAbsent(key, ifAbsent);
     notifyListeners();
+    return tmp;
   }
   remove(String key){
     _name2NodeDrawingData.remove(key);
@@ -68,9 +69,10 @@ class ConceptTree2DomainDrawingDataDic extends ChangeNotifier{
 
     return null;
   }
-  putIfAbsent(String key , DomainDrawingData Function() ifAbsent){
-    _name2DomainDrawingData.putIfAbsent(key, ifAbsent);
+  DomainDrawingData putIfAbsent(String key , DomainDrawingData Function() ifAbsent){
+    final tmp = _name2DomainDrawingData.putIfAbsent(key, ifAbsent);
     notifyListeners();
+    return tmp;
   }
   remove(String key){
     _name2DomainDrawingData.remove(key);

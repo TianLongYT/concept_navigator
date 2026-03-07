@@ -129,7 +129,17 @@ class NodeColorHelper{
         ? (extensions?.defaultDomainFontColor ?? Theme.of(context).colorScheme.error)
         : (extensions?.defaultConceptFontColor ?? Theme.of(context).colorScheme.error));
   }
+  // 获取修饰词节点颜色
+  static Color getDecoratorColor(Color? defaultColor,BuildContext context) {
+    final extensions = Theme.of(context).extension<NodeColorsExtension>();
+    return defaultColor?? extensions?.defaultDecoratorNodeColor ?? Theme.of(context).colorScheme.error;
+  }
 
+  // 获取修饰词文字颜色
+  static Color getDecoratorFontColor(Color? defaultColor,BuildContext context) {
+    final extensions = Theme.of(context).extension<NodeColorsExtension>();
+    return defaultColor?? extensions?.defaultDecoratorFontColor ?? Theme.of(context).colorScheme.error;
+  }
   static Color FromDic({
     required ConceptTree2DomainDrawingDataDic domainDrawingDataDic,
     required ConceptTree2NodeDrawingDataDic nodeDrawingDataDic,

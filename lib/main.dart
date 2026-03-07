@@ -1,6 +1,7 @@
 import 'package:concept_navigator/LearningFlutter_Wang/Provider/Foo_Model_Provider.dart';
 import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
+import 'package:concept_navigator/logic/Data/ConceptDecoration.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ConceptTreeModel>(create: (_)=>ConceptTreeModel(rootTree: DomainTree()..name = "root")),
         ChangeNotifierProvider<ConceptTree2NodeDrawingDataDic>(create: (_)=>ConceptTree2NodeDrawingDataDic()),
         ChangeNotifierProvider<ConceptTree2DomainDrawingDataDic>(create: (_)=>ConceptTree2DomainDrawingDataDic()),
+        ChangeNotifierProvider<ConceptTree2ConceptDecorationDic>(create: (_)=>ConceptTree2ConceptDecorationDic(),),
 
         ChangeNotifierProvider<ConceptTree2NodeViewDataDic>(create: (_)=>ConceptTree2NodeViewDataDic()),
         ChangeNotifierProvider<SelectionViewData>(create: (_)=>SelectionViewData()),
@@ -84,8 +86,9 @@ class MyApp extends StatelessWidget {
             NodeColorsExtension(
               defaultConceptFontColor: Colors.black,
               defaultDomainFontColor: Colors.black,
-              defaultConceptNodeColor: Colors.lightBlueAccent,
+              defaultConceptNodeColor: Colors.lightBlueAccent.withAlpha(200),
               defaultDomainNodeColor: Colors.deepPurpleAccent,
+              defaultDecoratorNodeColor: Colors.yellow[400]!,
             ),
           ]
           //disabledColor:  Colors.black87,
@@ -102,8 +105,9 @@ class MyApp extends StatelessWidget {
               NodeColorsExtension(
                 defaultConceptFontColor: Colors.black,
                 defaultDomainFontColor: Colors.black,
-                defaultConceptNodeColor: Colors.lightBlueAccent,
-                defaultDomainNodeColor: Colors.deepPurpleAccent,
+                defaultConceptNodeColor: Colors.lightBlueAccent.withAlpha(250),
+                defaultDomainNodeColor: Colors.deepPurpleAccent.withAlpha(250),
+                defaultDecoratorNodeColor: Colors.yellow[400]!,
               ),
             ]
         ),

@@ -12,6 +12,9 @@ class SelectionViewData extends ChangeNotifier {
   String currentDomain = "root";
   String currentConceptNodeName = "";
   String currentConceptNodeAlias = "";
+
+  DomainTree? currentDomainTree;
+  ConceptNodeTree? currentConceptTree;
   //DomainTree? _selectedDomain;
   //ConceptNodeTree? _selectedConceptNode;
   final _state = ValueNotifier<SelectionState>(SelectionState.none());
@@ -87,17 +90,28 @@ class SelectionViewData extends ChangeNotifier {
     }
     notifyListeners();
   }
-  void _JumpToNode(NodeTree parent,AddressBarModel addressBar,ConceptTreeModel treeModel){
+  void ResetSelection(AddressBarModel addressBar,ConceptTreeModel treeModel){
+    _JumpToNode(null,addressBar,treeModel);
+  }
+  void _JumpToNode(NodeTree? parent,AddressBarModel addressBar,ConceptTreeModel treeModel){
+    parent ??= treeModel.rootTree;
     if (parent is DomainTree) {
       currentDomain = parent.GetDomainKey();
       currentConceptNodeName = "";
       currentConceptNodeAlias = "";
+
+      currentDomainTree = parent;
+      currentConceptTree = null;
+
     } else if (parent is ConceptNodeTree) {
       currentDomain = parent.domainKey;
       currentConceptNodeName = parent.name;
       currentConceptNodeAlias = parent.alias;
+
+      currentConceptTree = parent;
+      currentDomainTree = null;
     }
-    addressBar.updateAddressBar(parent, treeModel);
+    addressBar.updateAddressBar(parent!, treeModel);
   }
   void _SelectNode(NodeTree selectedNode,GlobalStateModel globalState){
     if (selectedNode is DomainTree) {
@@ -137,7 +151,7 @@ class SelectionViewData extends ChangeNotifier {
 
   void CancelSelectionAndJumpOutParent({
     required NodeTree selectedNode,
-    required NodeTree parent,
+    required NodeTree? parent,
     required GlobalStateModel globalState,
     required AddressBarModel addressBar,
     required ConceptTreeModel treeModel,

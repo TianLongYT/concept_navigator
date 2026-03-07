@@ -7,10 +7,12 @@ class AddressBarModel extends ChangeNotifier{
   List<String> conceptAddresses = [];
 
   List<String> conceptAliasAddresses = [];
+  List<ConceptNodeTree> conceptTreeAddress = [];
 
   void AddConceptAddress(ConceptNodeTree concept){
     conceptAddresses.add(concept.name);
     conceptAliasAddresses.add(concept.alias);
+    conceptTreeAddress.add(concept);
   }
   void AddDomainAddress(DomainTree domain){
     domainAddresses.add(domain.name);
@@ -20,6 +22,7 @@ class AddressBarModel extends ChangeNotifier{
     domainAddresses.clear();
     conceptAddresses.clear();
     conceptAliasAddresses.clear();
+    conceptTreeAddress.clear();
 
     if (node is DomainTree) {
       List<String> domains = [];

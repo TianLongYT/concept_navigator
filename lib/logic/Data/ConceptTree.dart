@@ -1,5 +1,7 @@
 
 //域树。节点树。
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 
 abstract class NodeTree{
@@ -9,6 +11,13 @@ abstract class NodeTree{
   String GetDomainNodeKey();
 
   Map<String, dynamic> toJson();
+}
+
+enum ConceptStatus {
+  normal,            // 普通状态：不存在同名概念
+  template,          // 模板状态：存在同名，别名为空，且是广度优先最先遍历到的
+  templateReference, // 引用状态：存在同名，别名为空，但不是第一个
+  instance           // 实例状态：存在同名，且别名不为空
 }
 
 class ConceptNodeTree extends NodeTree{
@@ -28,6 +37,28 @@ class ConceptNodeTree extends NodeTree{
       }
     }
     return null;
+  }
+
+  /// 获取当前节点的状态(需要遍历树，非常耗。看后续能否用数据额外记录)
+  ConceptStatus getStatus(ConceptTreeModel model) {
+    // 1. 获取当前域中所有同名节点
+    List<ConceptNodeTree> sameNameNodes = model.getAllConceptNodesWithName(domainKey, name);
+    
+    if (sameNameNodes.length <= 1) {
+      return ConceptStatus.normal;
+    }
+
+    if (alias.isNotEmpty) {
+      return ConceptStatus.instance;
+    } else {
+      // 别名为空的情况，判断是否是第一个遍历到的
+      ConceptNodeTree? firstOne = model.getFirstOccurrenceOfName(domainKey, name);
+      if (firstOne == this) {
+        return ConceptStatus.template;
+      } else {
+        return ConceptStatus.templateReference;
+      }
+    }
   }
 
   @override String toString() {
@@ -168,17 +199,66 @@ class ConceptTreeModel extends ChangeNotifier{
     GenerateDic();
   }
   //构建获取节点树字典
-  GenerateDic({String domainKey = "root"}){
-    DomainTree? tree =GetDomainTree(domainKey); //rootTree?.Find(domain);
-    print("findNull${tree}");
-    if(tree == null) return;
+  GenerateDic({String? domainKey}){
+    // 如果未提供 domainKey，默认从 rootTree 的根路径开始生成
+    String key = domainKey ?? rootTree?.name ?? "root";
+    DomainTree? startTree = GetDomainTree(key);
+    print("findNull${startTree}");
+    if(startTree == null) return;
     domainNodeKey2ConceptTree.clear();
-    print("getTree${tree.GetDomainKey()}");
-    _GenerateDicDomain(tree.GetDomainKey(),tree);
+    print("getTree${startTree.GetDomainKey()}");
+
+    // 改为广度优先遍历 (BFS)，确保最先遍历到的（更高层级的）节点作为模板。
+    Queue<Map<String, dynamic>> queue = Queue();
+    queue.add({
+      'node': startTree,
+      'domainKey': startTree.GetDomainKey(),
+    });
+
+    while (queue.isNotEmpty) {
+      var current = queue.removeFirst();
+      var node = current['node'];
+      String dKey = current['domainKey'];
+
+      if (node is DomainTree) {
+        // 先处理该域下的直属概念
+        for (var concept in node.conceptNodeTree) {
+          queue.add({
+            'node': concept,
+            'domainKey': dKey,
+          });
+        }
+        // 再将子域加入队列
+        for (var childDomain in node.children) {
+          queue.add({
+            'node': childDomain,
+            'domainKey': AppendDomainKey(dKey, childDomain.name),
+          });
+        }
+      } else if (node is ConceptNodeTree) {
+        // 处理概念节点
+        node.domainKey = dKey;
+        String nodeKey = GenerateDomainNodeKey(dKey, node.name, node.alias);
+        
+        // 广度优先：如果字典中已存在该 key，则保留先遍历到的（通常是更高层级的）
+        if (!domainNodeKey2ConceptTree.containsKey(nodeKey)) {
+          domainNodeKey2ConceptTree[nodeKey] = node;
+        }
+
+        // 将子概念加入队列
+        for (var child in node.children) {
+          queue.add({
+            'node': child,
+            'domainKey': dKey,
+          });
+        }
+      }
+    }
+
     notifyListeners();
   }
   _GenerateDicDomain(String domainKey,DomainTree domainTree){
-    for(int i = 0;i<domainTree.conceptNodeTree.length;i++){
+    for(int i = 0; i<domainTree.conceptNodeTree.length;i++){
       _GenerateDicNode(domainKey, domainTree.conceptNodeTree[i]);
     }
     for(int i =0;i<domainTree.children.length;i++){
@@ -205,6 +285,51 @@ class ConceptTreeModel extends ChangeNotifier{
     }
   }
 
+  /// 获取指定域中所有名称匹配的节点
+  List<ConceptNodeTree> getAllConceptNodesWithName(String domainKey, String name) {
+    List<ConceptNodeTree> result = [];
+    DomainTree? domain = GetDomainTree(domainKey);
+    if (domain == null) return result;
+
+    void traverse(NodeTree node) {
+      if (node is ConceptNodeTree && node.name == name) {
+        result.add(node);
+      }
+      if (node is DomainTree) {
+        for (var c in node.conceptNodeTree) traverse(c);
+        for (var d in node.children) {
+           // 注意：域划分了范围，同名概念可以在不同域。
+           // 这里我们只在当前域内寻找。
+           // 如果需要跨子域寻找，则取消 return 限制
+        }
+      } else if (node is ConceptNodeTree) {
+        for (var c in node.children) traverse(c);
+      }
+    }
+    
+    // 在当前域及其子概念树中搜索
+    for (var concept in domain.conceptNodeTree) traverse(concept);
+    return result;
+  }
+
+  /// 广度优先遍历找到第一个出现的同名节点
+  ConceptNodeTree? getFirstOccurrenceOfName(String domainKey, String name) {
+    DomainTree? domain = GetDomainTree(domainKey);
+    if (domain == null) return null;
+
+    Queue<NodeTree> queue = Queue();
+    for (var c in domain.conceptNodeTree) queue.add(c);
+
+    while (queue.isNotEmpty) {
+      NodeTree current = queue.removeFirst();
+      if (current is ConceptNodeTree) {
+        if (current.name == name && current.alias.isEmpty) return current;
+        for (var child in current.children) queue.add(child);
+      }
+    }
+    return null;
+  }
+
   static const String AppendOperator = "/_/";//把_/设置为禁用组合。
   static const List<String> ErrorPatten = ["_/","/_","/_/"];
   static String GenerateDomainNodeKey(String domain,String name,String alias){
@@ -229,6 +354,15 @@ class ConceptTreeModel extends ChangeNotifier{
   static String DomainNodeKey2DomainKey(String domainNodeKey){
     return domainNodeKey.split(AppendOperator+AppendOperator).first;
   }
+  static String RemoveAliasFromDomainNodeKey(String domainNodeKey) {
+    List<String> tmpList = domainNodeKey.split(AppendOperator + AppendOperator);
+    if (tmpList.length == 2) {
+      String domain = tmpList[0];
+      String name = tmpList[1].split(AppendOperator)[0];
+      return domain + AppendOperator + AppendOperator + name;
+    }
+    return domainNodeKey;
+  }
   static bool domainKeyContainEqual(String longDomainNodeKey,String shortDomainKey){
     assert(shortDomainKey.split(AppendOperator + AppendOperator).length != 1,
     "domainKeyContain传入的shortDomainkey必须是domainKey,而不能是domainNodeKey");
@@ -242,7 +376,7 @@ class ConceptTreeModel extends ChangeNotifier{
     if(keys1.length < keys2.length){
       return false;
     }
-    for(int i = 0;i<keys2.length;i++){
+    for(int i = 0; i<keys2.length;i++){
       if(keys1[i] != keys2[i]){
         return false;
       }
@@ -310,7 +444,7 @@ class ConceptTreeModel extends ChangeNotifier{
   }
   DomainTree? _GetDomainTreeCor(DomainTree tree,String domainName){
 
-    for(int i = 0;i<tree.children.length;i++){
+    for(int i = 0; i<tree.children.length;i++){
       if(tree.children[i].name == domainName)
         return tree.children[i];
     }

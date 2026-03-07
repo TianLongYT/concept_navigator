@@ -19,6 +19,10 @@ class DomainRenameComponent extends StatefulWidget {
 class _DomainRenameComponentState extends State<DomainRenameComponent> {
   late SelectionViewData selection;
   final TextEditingController controller = TextEditingController();
+  
+  // 用于追踪模型状态，检测撤销/重做
+  String? _lastSyncName;
+
   bool hasNoChange = true;
   bool hasError = false;
 
@@ -62,6 +66,7 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
         transform(entry.key): entry.value
     };
   }
+
   @override
   void initState() {
     selection = context.read<SelectionViewData>();
@@ -69,12 +74,20 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
       if(!selection.IsSelectedDomain){
         return;
       }
-      //初始化controller
-      controller.text = selection.SelectedDomain!.name;
+      _syncFromModel();
     });
-    controller.text = selection.SelectedDomain!.name;
+    _syncFromModel();
     super.initState();
   }
+
+  void _syncFromModel() {
+    final domain = selection.SelectedDomain;
+    if (domain != null) {
+      controller.text = domain.name;
+      _lastSyncName = domain.name;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     //GlobalStateModel stateModel = context.watch<GlobalStateModel>();
@@ -85,6 +98,25 @@ class _DomainRenameComponentState extends State<DomainRenameComponent> {
     ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.watch<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
     CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
+
+    // 检测撤销/重做引起的模型变化
+    final selectedDomain = selection.SelectedDomain;
+    if (selectedDomain != null) {
+      if (selectedDomain.name != _lastSyncName) {
+        // 发现模型值与最后同步值不一致，说明发生了 Undo/Redo
+        _lastSyncName = selectedDomain.name;
+        
+        // 更新输入框（仅在内容不同时更新，防止光标跳动）
+        if (controller.text != selectedDomain.name) {
+          controller.text = selectedDomain.name;
+        }
+
+        // 重置状态
+        hasNoChange = true;
+        hasError = false;
+        nameError = null;
+      }
+    }
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,

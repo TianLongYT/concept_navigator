@@ -1,5 +1,6 @@
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
+import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ class AddressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     AddressBarModel barModel = context.watch<AddressBarModel>();
     SelectionViewData selection = context.watch<SelectionViewData>();
+    GlobalStateModel globalState = context.read<GlobalStateModel>();
 
     List<Widget> visibleParts = [];
     List<Widget> hiddenParts = [];
@@ -52,7 +54,10 @@ class AddressBar extends StatelessWidget {
           //设置selection。
           selection.currentConceptNodeName = barModel.conceptAddresses[i];
           selection.currentConceptNodeAlias = barModel.conceptAliasAddresses[i];
+          selection.currentConceptTree = barModel.conceptTreeAddress[i];
+
           selection.CancelSelection();
+          globalState.State = GlobalState.normal;
           //移除后面的conceptAddress.
           if(i+1>=barModel.conceptAddresses.length) {
             return;

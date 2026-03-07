@@ -99,6 +99,62 @@ class NodeAppearance{
   }
 
 }
+class DecoratorAppearance{
+  DecoratorAppearance();
+  //修饰词绘制数据
+
+  //修饰词形状。
+  Shape shape = Shape.circle;
+  //节点颜色
+  Color? nodeColor;
+  //核心节点大小
+  Size nodeSize = Size(50 * 1.0,50);
+  //留白。。。。
+  double emptySize = 1.4;
+
+  //字体形状
+  //字体颜色
+  Color? fontColor;
+  //字体自适应大小
+  double minFontSize = 10;
+  double maxFontSize = 30;
+
+  DecoratorAppearance Clone(){
+    return DecoratorAppearance()
+      ..shape = shape
+      ..nodeColor = nodeColor
+      ..nodeSize = nodeSize
+      ..emptySize = emptySize
+      ..fontColor = fontColor
+      ..minFontSize = minFontSize
+      ..maxFontSize = maxFontSize;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'shape': shape.index,
+      'nodeColor': nodeColor?.value,
+      'nodeWidth': nodeSize.width,
+      'nodeHeight': nodeSize.height,
+      'emptySize': emptySize,
+      'fontColor': fontColor?.value,
+      'minFontSize': minFontSize,
+      'maxFontSize': maxFontSize,
+    };
+  }
+
+  factory DecoratorAppearance.fromJson(Map<String, dynamic> json) {
+    return DecoratorAppearance()
+      ..shape = Shape.values[json['shape'] ?? Shape.circle.index]
+      ..nodeColor = json['nodeColor'] != null ? Color(json['nodeColor'] as int) : null
+      ..nodeSize = Size((json['nodeWidth'] ?? 50).toDouble(), (json['nodeHeight'] ?? 50).toDouble())
+      ..emptySize = (json['emptySize'] ?? 1.4).toDouble()
+      ..fontColor = json['fontColor'] != null ? Color(json['fontColor'] as int) : null
+      ..minFontSize = (json['minFontSize'] ?? 10).toDouble()
+      ..maxFontSize = (json['maxFontSize'] ?? 30).toDouble();
+  }
+
+}
 class UserSettingAppearanceModel extends ChangeNotifier{
 
   //主题
@@ -122,25 +178,53 @@ class NodeColorsExtension extends ThemeExtension<NodeColorsExtension> {
   final Color defaultDomainNodeColor;
   late Color defaultDomainFontColor;
 
+  // 新增修饰词颜色
+  final Color defaultDecoratorNodeColor;
+  late Color defaultDecoratorFontColor;
+
+  // 状态颜色
+  final Color templateColor;
+  final Color referenceColor;
+  final Color instanceColor;
+
 
   NodeColorsExtension(
   {   Color? defaultConceptFontColor,
      Color? defaultDomainFontColor,
+     Color? defaultDecoratorFontColor,
   required this.defaultConceptNodeColor,
     required this.defaultDomainNodeColor,
+    required this.defaultDecoratorNodeColor,
+    this.templateColor = Colors.purple,
+    this.referenceColor = Colors.blue,
+    this.instanceColor = Colors.orange,
   }):defaultConceptFontColor =defaultConceptFontColor ??(defaultConceptNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white),
-      defaultDomainFontColor = defaultDomainFontColor ?? (defaultDomainNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white)
+      defaultDomainFontColor = defaultDomainFontColor ?? (defaultDomainNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white),
+      defaultDecoratorFontColor = defaultDecoratorFontColor ?? (defaultDecoratorNodeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white)
   ;
 
 
   @override
   ThemeExtension<NodeColorsExtension> copyWith(
-      {Color? conceptNode, Color? domainNode,Color? conceptFont,Color? domainFont}) {
+      {Color? conceptNode,
+        Color? domainNode,
+        Color? conceptFont,
+        Color? domainFont,
+        Color? decoratorNode,
+        Color? decoratorFont,
+        Color? template,
+        Color? reference,
+        Color? instance}) {
     return NodeColorsExtension(
       defaultConceptFontColor: conceptFont ?? defaultConceptFontColor,
       defaultDomainFontColor: domainFont ?? defaultDomainFontColor,
       defaultConceptNodeColor: conceptNode ?? defaultConceptNodeColor,
       defaultDomainNodeColor: domainNode ?? defaultDomainNodeColor,
+      defaultDecoratorNodeColor: decoratorNode ?? defaultDecoratorNodeColor,
+      defaultDecoratorFontColor: decoratorFont ?? defaultDecoratorFontColor,
+      templateColor: template ?? templateColor,
+      referenceColor: reference ?? referenceColor,
+      instanceColor: instance ?? instanceColor,
     );
   }
 
@@ -157,6 +241,13 @@ class NodeColorsExtension extends ThemeExtension<NodeColorsExtension> {
           defaultConceptNodeColor, other.defaultConceptNodeColor, t)!,
       defaultDomainNodeColor: Color.lerp(
           defaultDomainNodeColor, other.defaultDomainNodeColor, t)!,
+      defaultDecoratorNodeColor: Color.lerp(
+          defaultDecoratorNodeColor, other.defaultDecoratorNodeColor, t)!,
+      defaultDecoratorFontColor: Color.lerp(
+          defaultDecoratorFontColor, other.defaultDecoratorFontColor, t)!,
+      templateColor: Color.lerp(templateColor, other.templateColor, t)!,
+      referenceColor: Color.lerp(referenceColor, other.referenceColor, t)!,
+      instanceColor: Color.lerp(instanceColor, other.instanceColor, t)!,
     );
   }
 }

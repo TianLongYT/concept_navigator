@@ -101,6 +101,9 @@ class LevelDomain extends StatelessWidget {
 
             selection.CancelSelection();
             selection.currentDomain = ConceptTreeModel.AppendDomainKey(selection.currentDomain,  domainTree!.name);
+            selection.currentDomainTree = domainTree;
+            selection.currentConceptTree = null;
+
             globalStateModel.State = GlobalState.normal;
 
 

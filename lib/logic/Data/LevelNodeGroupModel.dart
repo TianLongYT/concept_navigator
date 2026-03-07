@@ -11,8 +11,12 @@ class NodeDrawingData extends ChangeNotifier{
   //自身绘制数据
   //节点绘制模板和层级设置
   NodeAppearance nodeAppearance;
+
+  DecoratorAppearance decoratorAppearance;
   //节点文字
   String text = "new concept";
+  //修饰词。
+  Set<String> decoration = {};
 
   //子物体相对位置。
   List<Int2> childrenNodePos = [];//节点树与节点位置一一对应。
@@ -33,6 +37,8 @@ class NodeDrawingData extends ChangeNotifier{
   NodeDrawingData Clone(){
     return NodeDrawingData(nodeAppearance: this.nodeAppearance.Clone())//深拷贝一个Drawingdata,防止干扰之前的。
       ..text = text
+      ..decoration = {...decoration}
+      ..decoratorAppearance = decoratorAppearance.Clone()
       ..childrenNodePos = [...childrenNodePos]
       ..sortingMode = sortingMode
       ..maxX = maxX;
@@ -125,7 +131,7 @@ class NodeDrawingData extends ChangeNotifier{
 
   NodeDrawingData(
       {required this.nodeAppearance
-      });
+      }): decoratorAppearance = DecoratorAppearance();
 
   void repaint() {
     notifyListeners();
@@ -139,6 +145,8 @@ class NodeDrawingData extends ChangeNotifier{
   Map<String, dynamic> toJson() {
     return {
       'text': text,
+      'decoration': decoration.toList(),
+      'decoratorAppearance': decoratorAppearance.toJson(),
       'childrenNodePos': childrenNodePos.map((e) => {'x': e.x, 'y': e.y}).toList(),
       'sortingMode': sortingMode.index,
       'maxX': maxX,
@@ -154,20 +162,26 @@ class NodeDrawingData extends ChangeNotifier{
     var appearance = NodeAppearance.fromJson(json['appearance']);
     if (json['isDomain'] == true) {
       data = DomainDrawingData(nodeAppearance: appearance);
-      (data as DomainDrawingData).childrenDomainPos = (json['childrenDomainPos'] as List).map((e) => Int2(e['x'], e['y'])).toList();
+      (data as DomainDrawingData).childrenDomainPos = (json['childrenDomainPos'] as List).map((e) => Int2(e['x'] as int, e['y'] as int)).toList();
       data.domainSortingMode = SortingMode.values[json['domainSortingMode'] ?? 0];
       data.domainMaxX = json['domainMaxX'] ?? 4;
-      data.defaultDomainNodeColor = json['defaultDomainNodeColor'] != null ? Color(json['defaultDomainNodeColor']) : null;
-      data.defaultDomainFontColor = json['defaultDomainFontColor'] != null ? Color(json['defaultDomainFontColor']) : null;
+      data.defaultDomainNodeColor = json['defaultDomainNodeColor'] != null ? Color(json['defaultDomainNodeColor'] as int) : null;
+      data.defaultDomainFontColor = json['defaultDomainFontColor'] != null ? Color(json['defaultDomainFontColor'] as int) : null;
     } else {
       data = NodeDrawingData(nodeAppearance: appearance);
     }
     data.text = json['text'] ?? "";
-    data.childrenNodePos = (json['childrenNodePos'] as List).map((e) => Int2(e['x'], e['y'])).toList();
+    data.decoration = Set<String>.from(json['decoration'] ?? []);
+    
+    if (json['decoratorAppearance'] != null) {
+      data.decoratorAppearance = DecoratorAppearance.fromJson(json['decoratorAppearance']);
+    }
+
+    data.childrenNodePos = (json['childrenNodePos'] as List).map((e) => Int2(e['x'] as int, e['y'] as int)).toList();
     data.sortingMode = SortingMode.values[json['sortingMode'] ?? 0];
     data.maxX = json['maxX'] ?? 4;
-    data.defaultConceptNodeColor = json['defaultConceptNodeColor'] != null ? Color(json['defaultConceptNodeColor']) : null;
-    data.defaultConceptFontColor = json['defaultConceptFontColor'] != null ? Color(json['defaultConceptFontColor']) : null;
+    data.defaultConceptNodeColor = json['defaultConceptNodeColor'] != null ? Color(json['defaultConceptNodeColor'] as int) : null;
+    data.defaultConceptFontColor = json['defaultConceptFontColor'] != null ? Color(json['defaultConceptFontColor'] as int) : null;
     return data;
   }
 
@@ -196,6 +210,8 @@ class DomainDrawingData extends NodeDrawingData{
     return DomainDrawingData(
         nodeAppearance: nodeAppearance.Clone())
       ..text = text
+      ..decoration = {...decoration}
+      ..decoratorAppearance = decoratorAppearance.Clone()
       ..childrenNodePos = [...childrenNodePos]
       ..sortingMode = sortingMode
       ..maxX = maxX

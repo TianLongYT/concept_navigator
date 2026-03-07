@@ -1,5 +1,6 @@
 import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
+import 'package:concept_navigator/logic/Data/ConceptDecoration.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
@@ -8,6 +9,7 @@ import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
 import 'package:concept_navigator/logic/UI/EditPanel/NodeConflictCheck.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'UsePathAsAliasComponent.dart'; // 引入公共组件
 
 class ConceptRenameComponent extends StatefulWidget {
   ConceptRenameComponent({super.key,});
@@ -20,15 +22,17 @@ class ConceptRenameComponent extends StatefulWidget {
 class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
   late SelectionViewData selection;
   final TextEditingController controller = TextEditingController();
-
   final TextEditingController aliasController = TextEditingController();
 
-  bool hasNoChange = true;
+  // 用于追踪模型状态，检测撤销/重做
+  String? _lastSyncName;
+  String? _lastSyncAlias;
 
+  bool _usePathAsAlias = false;
+  bool hasNoChange = true;
   bool hasError = false;
 
   String? nameError = null;
-
   String? aliasError = null;
 
   ConceptErrorCheck errorCheckHelper = ConceptErrorCheck();
@@ -88,20 +92,41 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
   bool calHasChange(SelectionViewData selection,String name,String alias){
     return selection.SelectedConceptNode!.name != name || selection.SelectedConceptNode!.alias != alias;
   }
+  void OnSelectionChange(){
+    if(!selection.IsSelectedConceptNode){
+      return;
+    }
+    //初始化controller
+    _syncFromModel();
+  }
   @override
   void initState() {
     selection = context.read<SelectionViewData>();
-    selection.state.addListener((){
-      if(!selection.IsSelectedConceptNode){
-        return;
-      }
-      //初始化controller
-      controller.text = selection.SelectedConceptNode!.name;
-      aliasController.text = selection.SelectedConceptNode!.alias;
-    });
-    controller.text = selection.SelectedConceptNode!.name;
-    aliasController.text = selection.SelectedConceptNode!.alias;
+    selection.state.addListener(OnSelectionChange);
+    _syncFromModel();
     super.initState();
+  }
+  @override
+  void dispose() {
+    super.dispose();
+
+    //selection = context.read<SelectionViewData>();
+    selection.state.removeListener(OnSelectionChange);
+  }
+
+  void _syncFromModel() {
+    final node = selection.SelectedConceptNode;
+    if (node != null) {
+      controller.text = node.name;
+      aliasController.text = node.alias;
+      _lastSyncName = node.name;
+      _lastSyncAlias = node.alias;
+      
+      // 检查当前别名是否符合路径别名规则
+      final treeModel = context.read<ConceptTreeModel>();
+      String pathAlias = getCurrentViewNodePath(selection, treeModel);
+      _usePathAsAlias = (node.alias == pathAlias && pathAlias.isNotEmpty);
+    }
   }
 
   @override
@@ -112,7 +137,40 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
     ConceptTree2NodeDrawingDataDic nodeDrawingDataDic = context.watch<ConceptTree2NodeDrawingDataDic>();
     ConceptTree2DomainDrawingDataDic domainDrawingDataDic = context.read<ConceptTree2DomainDrawingDataDic>();
     ConceptTree2NodeViewDataDic viewDataDic = context.watch<ConceptTree2NodeViewDataDic>();
+    ConceptTree2ConceptDecorationDic decorationDic = context.watch<ConceptTree2ConceptDecorationDic>();
     CommandManagerForProvider commandManager = context.read<CommandManagerForProvider>();
+
+    // 检测撤销/重做引起的模型变化
+    final selectedNode = selection.SelectedConceptNode;
+    if (selectedNode != null) {
+      if (selectedNode.name != _lastSyncName || selectedNode.alias != _lastSyncAlias) {
+        // 发现模型值与最后同步值不一致，说明发生了 Undo/Redo
+        _lastSyncName = selectedNode.name;
+        _lastSyncAlias = selectedNode.alias;
+        
+        // 更新输入框（仅在内容不同时更新，防止光标跳动）
+        if (controller.text != selectedNode.name) {
+          setState(() {
+            controller.text = selectedNode.name;
+          });
+        }
+        if (aliasController.text != selectedNode.alias) {
+          setState(() {
+            aliasController.text = selectedNode.alias;
+          });
+        }
+
+        // 同步路径勾选状态
+        String pathAlias = getCurrentViewNodePath(selection, treeModel);
+        _usePathAsAlias = (selectedNode.alias == pathAlias && pathAlias.isNotEmpty);
+
+        // 重置错误状态
+        hasNoChange = true;
+        hasError = false;
+        nameError = null;
+        aliasError = null;
+      }
+    }
 
     return Column(
       children: [
@@ -138,10 +196,25 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
           //   //设置节点名和别名。
           //   //设置渲染物体.
           // },
-        )
-        ,
+        ),
+
+        UsePathAsAliasComponent(
+          value: _usePathAsAlias,
+          onChanged: (bool value) {
+            setState(() {
+              _usePathAsAlias = value;
+              if (_usePathAsAlias) {
+                String pathAlias = getCurrentViewNodePath(selection, treeModel);
+                aliasController.text = pathAlias;
+              }
+              nameErrorCheck(treeModel, selection, controller.text, aliasController.text);
+            });
+          },
+        ),
+
         TextField(
             controller: aliasController,
+            enabled: !_usePathAsAlias,
             decoration: InputDecoration(
               //border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.nest_cam_wired_stand),
@@ -205,6 +278,11 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                   print("EditingConceptPanel找不到当前修改节点的NodeViewData");
                   return;
                 }
+                ConceptDecoration? lastDecoration = decorationDic.getDecoration(oldDomainNodeKey);
+                if(lastDecoration == null){
+                  print("EditingConceptPanel找不到当前修改节点的ConceptDecoration");
+                  return;
+                }
 
                 List<ConceptNodeTree> childrenBackup = [];
                 if(hasSameConcept){
@@ -223,12 +301,16 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                     newDrawingData.text = newName;
 
                     NodeViewData newViewData = lastViewData.Clone();
+                    ConceptDecoration newDecoration = lastDecoration.clone();
+
                     nodeDrawingDataDic.putIfAbsent(newDomainNodeKey, () => newDrawingData);
                     viewDataDic.putIfAbsent(newDomainNodeKey, () => newViewData);
+                    decorationDic.putIfAbsent(newDomainNodeKey, () => newDecoration);
 
                     if(!treeModel.ContainConceptNode(oldDomainNodeKey)) {
                       nodeDrawingDataDic.remove(oldDomainNodeKey);
                       viewDataDic.remove(oldDomainNodeKey);
+                      decorationDic.remove(oldDomainNodeKey);
                     }
                   }
                   else{
@@ -267,10 +349,12 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                     if(!treeModel.ContainConceptNode(newDomainNodeKey)) {
                       nodeDrawingDataDic.remove(newDomainNodeKey);
                       viewDataDic.remove(newDomainNodeKey);
+                      decorationDic.remove(newDomainNodeKey);
                     }
 
                     nodeDrawingDataDic.putIfAbsent(oldDomainNodeKey, () => lastDrawingData);
                     viewDataDic.putIfAbsent(oldDomainNodeKey, () => lastViewData);
+                    decorationDic.putIfAbsent(oldDomainNodeKey, () => lastDecoration);
                   }
                   else{
                     if(chosenReference){

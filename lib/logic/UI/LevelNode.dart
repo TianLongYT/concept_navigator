@@ -126,6 +126,9 @@ class LevelNode extends StatelessWidget {
                   selection.CancelSelection();
                   selection.currentConceptNodeName = nodeTree!.name;
                   selection.currentConceptNodeAlias = nodeTree!.alias;
+                  selection.currentConceptTree = nodeTree;
+                  selection.currentDomainTree = null;
+
                   globalStateModel.State = GlobalState.normal;
 
 

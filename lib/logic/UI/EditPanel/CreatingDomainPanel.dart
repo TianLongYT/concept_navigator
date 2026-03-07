@@ -95,7 +95,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Column(
+      child: ListView(
 
         children: [
           Text("新建域"),
@@ -103,6 +103,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
           TextField(
 
             controller: controller,
+            autofocus: true, // 自动激活输入框
             decoration: InputDecoration(
               //border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.dashboard_customize_rounded),
@@ -155,7 +156,7 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
 
               selection.CancelSelectionAndJumpOutParent(
                 selectedNode: domain2Add,
-                parent: domain2Add.parent!,
+                parent: domain2Add.parent,
                 globalState: stateModel,
                 addressBar: addressBar,
                 treeModel: treeModel,

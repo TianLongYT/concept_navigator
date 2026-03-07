@@ -91,7 +91,7 @@ class NodePositionHelper{
       if(domainTree!.conceptNodeTree.isNotEmpty){
         final String domainNameKey = ConceptTreeModel.GenerateDomainNodeKey(curDomainKey, domainTree!.conceptNodeTree[0].name, domainTree!.conceptNodeTree[0].alias);
         final NodeDrawingData? drawingData = nodeDrawingDataDic.GetNodeDrawingData(domainNameKey);
-        if(drawingData == null) throw Exception("exception,根据子树找不到绘制子节点的渲染物体,键:${domainNameKey}，字典${nodeDrawingDataDic.toString()}");
+        if(drawingData == null) throw Exception("exception,根据子树找不到绘制子节点的渲染物体,键:${domainNameKey}，字典${nodeDrawingDataDic.toString()}，域字典${domainDrawingDataDic.toString()},树${treeModel.PrintTree()},树字典${treeModel.PrintDic()}");
 
         Size nodeSize = drawingData.nodeAppearance.nodeSize * drawingData.nodeAppearance.emptySize;
         int usefulCount = domainTree!.conceptNodeTree.length > domainDrawingData!.maxX ? domainDrawingData!.maxX:domainTree!.conceptNodeTree.length;
