@@ -1,16 +1,65 @@
-# concept_navigator
+# Concept Navigator
 
-One of The Greatest Tools for Designer
+对复杂概念进行拆解并重组的设计辅助工具。
 
-## Getting Started
+[English Version](./README_EN.md)
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 目录
+- [1. 简介](#1-简介)
+- [2. 设计目的](#2-设计目的)
+- [3. 核心用法](#3-核心用法)
+- [4. 使用环境](#4-使用环境)
+- [5. 开始使用](#5-开始使用)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 1. 简介
+Concept Navigator 是一款基于 Flutter 开发的设计辅助工具。它通过独特的“域-概念-修饰词”架构，帮助设计师和逻辑建模者将复杂系统拆解成抽象概念元件，进行概念重组辅助创作。
+
+---
+
+## 2. 设计目的
+本工具的核心设计逻辑旨在通过结构化的方式模拟认知过程，解决复杂逻辑的建模问题：
+
+*   **概念 (Concept) - 核心**  
+    系统的核心单元，根据**名称**和**别名**进行唯一区分（类比：**类/类成员**）。包含三类状态：
+    *   **模板 (Template)**：定义的原始形态。
+    *   **模板引用 (Template Reference)**：模板的直接映射，修改会同步至源模板。
+    *   **引用实例 (Reference Instance)**：基于模板的变种，支持个性化修改与恢复。
+*   **域 (Domain)**  
+    用于划分概念的作用范围。确保在不同语境下概念的隔离与组织（类比：**命名空间**）。
+*   **修饰词 (Modifier)**  
+    用于形容概念的具体数值或特征，为后续的概念分析提供数据支持（类比：**概念的实例或值**）。
+
+---
+
+## 3. 核心用法
+
+### 节点创建
+*   支持概念节点、域节点的快速创建、命名及管理。
+
+### 层级导航
+*   **双击预览**：双击节点进入子层级查看详情。
+*   **路径跳转**：利用顶部地址栏在各级路径间快速切换。
+*   **整体预览**：支持全局视口的缩放与平移，提供宏观视角。
+
+### 节点管理
+*   提供节点的快速查找、属性编辑、跨层级移动。
+*   支持带撤销（Undo/Redo）功能的复制、剪切、粘贴。
+
+---
+
+## 4. 使用环境
+*   **多端支持**：Android, iOS, Web, Windows, macOS。
+*   **交互优化**：
+    *   **移动端**：适配长按交互（长按 1 秒进入复制粘贴模式）。
+    *   **PC 端**：支持标准的 Ctrl+C/X/V 快捷键及 Ctrl+Z/Y 撤销重做。
+
+---
+
+## 5. 开始使用
+本项目是一个 Flutter 应用程序。
+
+- [Flutter 官方文档](https://docs.flutter.dev/)
