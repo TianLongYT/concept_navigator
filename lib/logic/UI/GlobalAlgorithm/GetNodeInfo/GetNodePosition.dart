@@ -182,7 +182,7 @@ class NodePositionHelper{
       final ConceptNodeTree childNodeTree = nodeTree!.children[childIndex];
       final String childDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(curDomainKey, childNodeTree.name, childNodeTree.alias);
       final NodeDrawingData? drawingData = nodeDrawingDataDic.GetNodeDrawingData(childDomainNodeKey);
-      if(drawingData == null) throw Exception("无法找到子概念节点的绘制数据");
+      if(drawingData == null) throw Exception("无法找到子概念节点的绘制数据,Key${childDomainNodeKey}");
 
       childNodeDrawingData = drawingData;
 

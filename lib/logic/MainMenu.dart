@@ -8,6 +8,7 @@ import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
 import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/Data/UserSettingModel.dart';
 import 'package:concept_navigator/logic/GlobalAlgorithm/PersistenceLogic.dart';
 import 'package:concept_navigator/logic/UI/FloatingActionButton/MFloatingButton.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/SaveLogic.dart';
@@ -77,10 +78,10 @@ class _MainmenuState extends State<Mainmenu> {
       drawer: Drawer(
         child:  ListView(
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+            DrawerHeader(
+              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
                 child: Text(
-                  "AppDrawer",style: TextStyle(
+                  "概念导航器",style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                 ),
@@ -108,6 +109,67 @@ class _MainmenuState extends State<Mainmenu> {
             ),
             // --- 数据持久化功能按钮 ---
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.create_new_folder),
+              title: const Text("新建 (New)", style: TextStyle(fontSize: 20)),
+              onTap: () async {
+                bool? confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("确认新建"),
+                    content: const Text("是否新建项目？未保存的更改将丢失。"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("取消"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("确认"),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true && context.mounted) {
+
+                  // 清除当前打开的项目路径，确保下次保存时触发“另存为”
+                  PersistenceLogic.currentFilePath = null;
+
+                  final treeModel = context.read<ConceptTreeModel>();
+
+                  // 重置树结构
+                  treeModel.rootTree = DomainTree()..name = "root";
+                  treeModel.GenerateDic();
+
+                  // 重置绘图与视图数据字典
+                  context.read<ConceptTree2NodeDrawingDataDic>().data = {};
+                  context.read<ConceptTree2DomainDrawingDataDic>().data = {
+                    "root": DomainDrawingData(
+                      nodeAppearance: NodeAppearance(),
+                    )
+                  };
+                  context.read<ConceptTree2NodeViewDataDic>().data = {
+                    "root": NodeViewData(),
+                  };
+                  context.read<ConceptTree2ConceptDecorationDic>().clear();
+
+
+                  // 重置 UI 选择状态
+                  final selection = context.read<SelectionViewData>();
+                  selection.ResetSelection(
+                    context.read<AddressBarModel>(),
+                    treeModel,
+                  );
+                  context.read<GlobalStateModel>().State = GlobalState.normal;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("新项目已创建")),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.add_box),
               title: const Text("另存为 (Save As)", style: TextStyle(fontSize: 20)),

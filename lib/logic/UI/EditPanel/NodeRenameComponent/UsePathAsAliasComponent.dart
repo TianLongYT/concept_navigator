@@ -19,7 +19,7 @@ class UsePathAsAliasComponent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CheckboxListTile(
-      title: const Text("使用路径作为别名", style: TextStyle(fontSize: 14)),
+      title: const Text("自动获取别名", style: TextStyle(fontSize: 14)),
       value: value,
       onChanged: (bool? newValue) {
         onChanged(newValue ?? false);
@@ -34,6 +34,7 @@ class UsePathAsAliasComponent extends StatelessWidget {
 /// Calculates the full path of the current view's parent node.
 String getCurrentViewNodePath(SelectionViewData selection, ConceptTreeModel treeModel) {
   String separator = kIsWeb ? "/" : Platform.pathSeparator;
+  //String separator = ConceptTreeModel.AppendOperator;
   
   // Start with the domain path,
   List<String> domainParts = ConceptTreeModel.SplitDomainKey(selection.currentDomain);

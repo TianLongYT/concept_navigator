@@ -25,27 +25,31 @@ class AddressBarModel extends ChangeNotifier{
     conceptTreeAddress.clear();
 
     if (node is DomainTree) {
-      List<String> domains = [];
+      List<DomainTree> domains = [];
       DomainTree? temp = node;
       while (temp != null) {
-        domains.insert(0, temp.name);
+        domains.insert(0, temp);
         temp = temp.parent;
       }
-      domainAddresses = domains;
+      for (var domain in domains) {AddDomainAddress(domain);}
+
     } else if (node is ConceptNodeTree) {
       DomainTree? domain = treeModel.GetDomainTree(node.domainKey);
-      List<String> domains = [];
+      List<DomainTree> domains = [];
       DomainTree? tempD = domain;
       while (tempD != null) {
-        domains.insert(0, tempD.name);
+        domains.insert(0, tempD);
         tempD = tempD.parent;
       }
-      domainAddresses = domains;
+      for (var domain in domains) {AddDomainAddress(domain);}
+
+      List<ConceptNodeTree> concepts = [];
       NodeTree? tempN = node;
       while(tempN!=null && tempN is ConceptNodeTree){
-        AddConceptAddress(tempN);
+        concepts.insert(0,tempN);
         tempN = tempN.parent;
       }
+      for (var concept in concepts) {AddConceptAddress(concept);}
     }
   }
 

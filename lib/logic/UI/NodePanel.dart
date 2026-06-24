@@ -510,7 +510,7 @@ class _NodepanelState extends State<Nodepanel> {
         },
         onUpdate: (details){
           if(details.pointerCount == 1){
-            nodeViewData.MoveScaleView(details.focalPointDelta * nodeViewData.scale,details.scale);
+            nodeViewData.MoveScaleView(details.focalPointDelta / nodeViewData.scale,details.scale);
 
           }
           else if(details.pointerCount > 1){
@@ -551,7 +551,7 @@ class _NodepanelState extends State<Nodepanel> {
           onPointerPanZoomUpdate: (PointerPanZoomUpdateEvent details)
           {
             if(details.pointer == 1){
-              nodeViewData.MoveScaleView(details.panDelta * nodeViewData.scale,details.scale);
+              nodeViewData.MoveScaleView(details.panDelta / nodeViewData.scale,details.scale);
 
             }
             else if(details.pointer > 1){

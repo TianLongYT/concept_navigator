@@ -28,7 +28,7 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
   String? _lastSyncName;
   String? _lastSyncAlias;
 
-  bool _usePathAsAlias = false;
+  bool _autoAlias = false;
   bool hasNoChange = true;
   bool hasError = false;
 
@@ -90,7 +90,7 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
     }
   }
   bool calHasChange(SelectionViewData selection,String name,String alias){
-    return selection.SelectedConceptNode!.name != name || selection.SelectedConceptNode!.alias != alias;
+    return selection.SelectedConceptNode!.name != name || selection.SelectedConceptNode!.alias != alias || selection.SelectedConceptNode!.autoAlias != _autoAlias;
   }
   void OnSelectionChange(){
     if(!selection.IsSelectedConceptNode){
@@ -121,11 +121,7 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
       aliasController.text = node.alias;
       _lastSyncName = node.name;
       _lastSyncAlias = node.alias;
-      
-      // 检查当前别名是否符合路径别名规则
-      final treeModel = context.read<ConceptTreeModel>();
-      String pathAlias = getCurrentViewNodePath(selection, treeModel);
-      _usePathAsAlias = (node.alias == pathAlias && pathAlias.isNotEmpty);
+      _autoAlias = node.autoAlias;
     }
   }
 
@@ -147,7 +143,7 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
         // 发现模型值与最后同步值不一致，说明发生了 Undo/Redo
         _lastSyncName = selectedNode.name;
         _lastSyncAlias = selectedNode.alias;
-        
+
         // 更新输入框（仅在内容不同时更新，防止光标跳动）
         if (controller.text != selectedNode.name) {
           setState(() {
@@ -161,8 +157,7 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
         }
 
         // 同步路径勾选状态
-        String pathAlias = getCurrentViewNodePath(selection, treeModel);
-        _usePathAsAlias = (selectedNode.alias == pathAlias && pathAlias.isNotEmpty);
+        _autoAlias = selectedNode.autoAlias;
 
         // 重置错误状态
         hasNoChange = true;
@@ -191,30 +186,34 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
           onChanged: (value){
             nameErrorCheck(treeModel, selection, value, aliasController.text);
           },
-          // onChanged: (value){
-          //   //风险判断。
-          //   //设置节点名和别名。
-          //   //设置渲染物体.
-          // },
         ),
 
         UsePathAsAliasComponent(
-          value: _usePathAsAlias,
+          value: _autoAlias,
           onChanged: (bool value) {
             setState(() {
-              _usePathAsAlias = value;
-              if (_usePathAsAlias) {
-                String pathAlias = getCurrentViewNodePath(selection, treeModel);
-                aliasController.text = pathAlias;
+              _autoAlias = value;
+
+              if (selectedNode != null) {
+                // 计算预览的自动Alias。
+                if(value){
+                  aliasController.value = TextEditingValue(text: treeModel.getAutoAlias(selectedNode));
+                }
+                else{
+                  aliasController.value = TextEditingValue(text: "");
+
+                }
+                //print("selectedNode alias ${selectedNode.alias},controller alias ${aliasController.text}");
+
               }
-              nameErrorCheck(treeModel, selection, controller.text, aliasController.text);
+              aliasErrorCheck(treeModel, selection, controller.text, aliasController.text);
             });
           },
         ),
 
         TextField(
             controller: aliasController,
-            enabled: !_usePathAsAlias,
+            enabled: !_autoAlias,
             decoration: InputDecoration(
               //border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.nest_cam_wired_stand),
@@ -241,29 +240,21 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                 }
                 String oldName = selection.SelectedConceptNode!.name;
                 String oldAlias = selection.SelectedConceptNode!.alias;
+                bool oldAutoAlias = selection.SelectedConceptNode!.autoAlias;
+
                 String newName = controller.text;
                 String newAlias = aliasController.text;
+                bool newAutoAlias = _autoAlias;
+
                 String oldDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, oldName, oldAlias);
                 String newDomainNodeKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, newName, newAlias);
 
-                //风险判断。
-                //新命名的概念名已经存在域中。
-                //如果当前节点没有子物体。直接成为引用。
-                //如果当前节点有子物体，选择保留当前子节点，还是成为引用。
-                if(aliasController.text.length == 0){
+                if(!newAutoAlias && newAlias.isEmpty){
                   if(treeModel.ContainConceptNode(newDomainNodeKey)){
-                    //存在同概念名节点，观察双方子节点数量。
                     hasSameConcept = true;
                     if(selectedConceptNode.children.isNotEmpty){
-                      //弹窗，选择是成为引用，还是才成为新的根节点。
                       chosenReference = true;
                     }
-                  }
-                }
-                else{
-                  if(treeModel.ContainConceptNode(newDomainNodeKey)){
-                    //同一域中不能存在概念名和别名都相同的节点。在UI层解决,hasError。
-                    return;
                   }
                 }
 
@@ -279,9 +270,10 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                   return;
                 }
                 ConceptDecoration? lastDecoration = decorationDic.getDecoration(oldDomainNodeKey);
+                bool hasDecoration = true;
                 if(lastDecoration == null){
                   print("EditingConceptPanel找不到当前修改节点的ConceptDecoration");
-                  return;
+                  hasDecoration = false;
                 }
 
                 List<ConceptNodeTree> childrenBackup = [];
@@ -290,39 +282,40 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                 }
 
                 void doRename() {
-                  //设置节点名和别名。
                   selectedConceptNode.name = newName;
                   selectedConceptNode.alias = newAlias;
+                  selectedConceptNode.autoAlias = newAutoAlias;
                   treeModel.GenerateDic();
+
+                  // 获取最终生成的别名
+                  String actualNewAlias = selectedConceptNode.alias;
+                  String actualNewKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, newName, actualNewAlias);
+                  aliasController.text = actualNewAlias;
+
                   if(hasSameConcept == false) {
-                    //将要成为的节点中，没有出现相同节点。直接完成交换即可。
-                    //设置渲染物体。
                     NodeDrawingData newDrawingData = lastDrawingData.Clone();
                     newDrawingData.text = newName;
 
                     NodeViewData newViewData = lastViewData.Clone();
-                    ConceptDecoration newDecoration = lastDecoration.clone();
+                    ConceptDecoration? newDecoration = lastDecoration?.clone();
 
-                    nodeDrawingDataDic.putIfAbsent(newDomainNodeKey, () => newDrawingData);
-                    viewDataDic.putIfAbsent(newDomainNodeKey, () => newViewData);
-                    decorationDic.putIfAbsent(newDomainNodeKey, () => newDecoration);
+                    nodeDrawingDataDic.putIfAbsent(actualNewKey, () => newDrawingData);
+                    viewDataDic.putIfAbsent(actualNewKey, () => newViewData);
+                    if(hasDecoration){
+                      decorationDic.putIfAbsent(actualNewKey, () => newDecoration!);
+                    }
 
                     if(!treeModel.ContainConceptNode(oldDomainNodeKey)) {
                       nodeDrawingDataDic.remove(oldDomainNodeKey);
                       viewDataDic.remove(oldDomainNodeKey);
-                      decorationDic.remove(oldDomainNodeKey);
+                      if(hasDecoration){
+                        decorationDic.remove(oldDomainNodeKey);
+                      }
                     }
                   }
                   else{
                     if(chosenReference){
-                      //选择成为引用。清除子节点。
-                      print("存在重名概念，将自身设置成引用");
                       selectedConceptNode.children.clear();
-                    }
-                    else{
-                      print("将自身设置成根节点");
-                      //重新构建字典,将children移动到根部位置。？？？或者可以自由设置根部位置。确保非根部的children为空就行。
-
                     }
                   }
 
@@ -337,57 +330,54 @@ class _ConceptRenameComponentState extends State<ConceptRenameComponent> {
                     viewDrawingDataDic: viewDataDic,
                   );
                 }
-                void undoRename(){
-                  //设置节点名和别名。
-                  selectedConceptNode.name = oldName;
-                  selectedConceptNode.alias = oldAlias;
-                  treeModel.GenerateDic();
 
-                  if(hasSameConcept == false) {
-                    //将要成为的节点中，没有出现相同节点。直接完成交换即可。
-                    //设置渲染物体。
-                    if(!treeModel.ContainConceptNode(newDomainNodeKey)) {
-                      nodeDrawingDataDic.remove(newDomainNodeKey);
-                      viewDataDic.remove(newDomainNodeKey);
-                      decorationDic.remove(newDomainNodeKey);
-                    }
+                void undoRename() {
+                   selectedConceptNode.name = oldName;
+                   selectedConceptNode.alias = oldAlias;
+                   selectedConceptNode.autoAlias = oldAutoAlias;
+                   treeModel.GenerateDic();
 
-                    nodeDrawingDataDic.putIfAbsent(oldDomainNodeKey, () => lastDrawingData);
-                    viewDataDic.putIfAbsent(oldDomainNodeKey, () => lastViewData);
-                    decorationDic.putIfAbsent(oldDomainNodeKey, () => lastDecoration);
-                  }
-                  else{
-                    if(chosenReference){
-                      //选择成为引用。清除子节点。
-                      print("存在重名概念，将自身设置成引用");
-                      selectedConceptNode.children = childrenBackup;
-                    }
-                    else{
-                      print("将自身设置成根节点");
-                      //重新构建字典,将children移动到根部位置。？？？或者可以自由设置根部位置。确保非根部的children为空就行。
+                   String actualNewAlias = oldAlias; // 撤回时使用旧别名
+                   String actualNewKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, oldName, actualNewAlias);
 
-                    }
-                  }
+                   if(hasSameConcept == false) {
+                     nodeDrawingDataDic.putIfAbsent(oldDomainNodeKey, () => lastDrawingData);
+                     viewDataDic.putIfAbsent(oldDomainNodeKey, () => lastViewData);
+                     if(hasDecoration){
+                       decorationDic.putIfAbsent(oldDomainNodeKey, () => lastDecoration!);
+                     }
 
-                  selection.SelectAndFocusNode(
-                    selectedNode: selectedConceptNode,
-                    parent: selectedConceptNode.parent!,
-                    globalState: globalState,
-                    addressBar: addressBar,
-                    treeModel: treeModel,
-                    nodeDrawingDataDic: nodeDrawingDataDic,
-                    domainDrawingDataDic: domainDrawingDataDic,
-                    viewDrawingDataDic: viewDataDic,
-                  );
+                     // 清理可能存在的重命名后的 Key
+                     String renameAlias = newAlias;
+                     String renameKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, newName, renameAlias);
+                     if(!treeModel.ContainConceptNode(renameKey)) {
+                       nodeDrawingDataDic.remove(renameKey);
+                       viewDataDic.remove(renameKey);
+                       if(hasDecoration){
+                         decorationDic.remove(renameKey);
+                       }
+                     }
+                   } else if(chosenReference) {
+                     selectedConceptNode.children.addAll(childrenBackup);
+                   }
+
+                   selection.SelectAndFocusNode(
+                     selectedNode: selectedConceptNode,
+                     parent: selectedConceptNode.parent!,
+                     globalState: globalState,
+                     addressBar: addressBar,
+                     treeModel: treeModel,
+                     nodeDrawingDataDic: nodeDrawingDataDic,
+                     domainDrawingDataDic: domainDrawingDataDic,
+                     viewDrawingDataDic: viewDataDic,
+                   );
                 }
 
                 doRename();
-                print("打印节点字典"+treeModel.PrintDic());
                 commandManager.PushCommand(commandManager.editInstance, Command(
-                  function: () => doRename(),
-                  undoFunction: () => undoRename(),
+                  function: doRename,
+                  undoFunction: undoRename,
                 ));
-
               },
               child: Text("修改概念名")
           ),

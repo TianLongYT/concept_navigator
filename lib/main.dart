@@ -1,6 +1,7 @@
 import 'package:concept_navigator/LearningFlutter_Wang/Provider/Foo_Model_Provider.dart';
 import 'package:concept_navigator/logic/CommandMode/ProjCommand.dart';
 import 'package:concept_navigator/logic/Data/AddressBarModel.dart';
+import 'package:concept_navigator/logic/Data/ClipboardModel.dart';
 import 'package:concept_navigator/logic/Data/ConceptDecoration.dart';
 import 'package:concept_navigator/logic/Data/ConceptTree.dart';
 import 'package:concept_navigator/logic/Data/ConceptTreeToDrawingData.dart';
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<SelectionViewData>(create: (_)=>SelectionViewData()),
         ChangeNotifierProvider<GlobalStateModel>(create: (_)=>GlobalStateModel()),
         ChangeNotifierProvider<EditingStateModel>(create: (_)=>EditingStateModel()),
+        ChangeNotifierProvider<ClipboardModel>(create: (_)=>ClipboardModel()),
 
         ChangeNotifierProvider<AddressBarModel>(create: (_)=>AddressBarModel()),
         ChangeNotifierProvider<CommandManagerForProvider>(create: (_)=>CommandManagerForProvider()),
@@ -78,7 +80,7 @@ class MyApp extends StatelessWidget {
           // tested with just a hot reload.
           colorScheme:  ColorScheme.fromSeed(
               brightness: Brightness.light,
-              seedColor: HSLColor.fromAHSL(1, 200, 0.1, 0.2).toColor(),
+              seedColor: HSLColor.fromAHSL(1, 54, 0.091, 0.078).toColor(),
               dynamicSchemeVariant: DynamicSchemeVariant.neutral,
               contrastLevel: 0,
           ),
@@ -111,7 +113,7 @@ class MyApp extends StatelessWidget {
               ),
             ]
         ),
-        themeMode: ThemeMode.dark,
+        themeMode: ThemeMode.light,
         home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
     );
@@ -121,7 +123,7 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
+  // This widget is the root of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
   // how it looks.
 

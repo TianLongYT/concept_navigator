@@ -7,6 +7,7 @@ import 'package:concept_navigator/logic/Data/GlobalState.dart';
 import 'package:concept_navigator/logic/Data/LevelNodeGroupModel.dart';
 import 'package:concept_navigator/logic/Data/NodeSwapModel.dart';
 import 'package:concept_navigator/logic/Data/SelectionViewData.dart';
+import 'package:concept_navigator/logic/UI/GlobalAlgorithm/DeleteNodeLogic.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GetNodeInfo/GetNodePosition.dart';
 import 'package:concept_navigator/logic/UI/GlobalAlgorithm/GlobalCoroutine.dart';
 import 'package:concept_navigator/logic/UI/LevelNodePresentation.dart';
@@ -107,6 +108,11 @@ class LevelDomain extends StatelessWidget {
             globalStateModel.State = GlobalState.normal;
 
 
+          },
+          onLongPress: () {
+            // 长按进入粘贴模式
+            DeleteNodeLogic.copySelectedNode(context);
+            globalStateModel.State = GlobalState.pasting;
           },
           child: LevelNodePresentation(scale: _scale,isDomain: true,parentConceptDrawingData: parentConceptDrawingData,parentDomainDrawingData: parentDomainDrawingData,drawingData: drawingData, nodeTree: null,domainTree: domainTree,),
         ),

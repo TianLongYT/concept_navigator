@@ -19,6 +19,7 @@ enum GlobalState{
   creatingDomain,
   editingConcept,
   editingDomain,
+  pasting, // 新增：粘贴模式
 }
 
 class GlobalStateModel extends StateModel<GlobalState> {

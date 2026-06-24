@@ -253,10 +253,8 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
             onChanged: (bool value) {
               setState(() {
                 _usePathAsAlias = value;
-                if (_usePathAsAlias) {
-                  String pathAlias = getCurrentViewNodePath(selection, treeModel);
-                  aliasController.text = pathAlias;
-                }
+                // 暂时不手动计算，而是通过 GenerateDic 自动同步
+                // 需要通过当前路径获取父概念层级。
                 nameErrorCheck(treeModel, selection, controller.text, aliasController.text);
               });
             },
@@ -276,14 +274,24 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
           ),
           OutlinedButton(
             onPressed: hasError ? null : () {
-              ConceptNodeTree node2Add = ConceptNodeTree()..name = controller.text..alias = aliasController.text;
+              ConceptNodeTree node2Add = ConceptNodeTree()
+                ..name = controller.text
+                ..alias = aliasController.text
+                ..autoAlias = _usePathAsAlias; // 应用自动别名设置
+
               NodeDrawingData newDrawingData = NodeDrawingData(nodeAppearance: NodeAppearance())..text = controller.text;
               NodeViewData newViewData = NodeViewData();
-              String newKey = ConceptTreeModel.GenerateDomainNodeKey(selection.currentDomain, controller.text, aliasController.text);
-              final String parentKey = selection.IsInDomain ? selection.currentDomain : selection.CurrentDomainNodeKey;
+
+              // 提前从 selection 中提取并固化数据，确保 Undo/Redo 时不受当前 UI 状态影响
               final bool isParentDomain = selection.IsInDomain;
+              final String parentKey = selection.IsInDomain ? selection.currentDomain : selection.CurrentDomainNodeKey;
+              final String currentDomain = selection.currentDomain;
+              final String controllerText = controller.text;
 
               void doCreate() {
+                //final String parentKey = selection.IsInDomain ? selection.currentDomain : selection.CurrentDomainNodeKey;
+                //final bool isParentDomain = selection.IsInDomain;
+
                 if (isParentDomain) {
                   if (!treeModel.AddNewConceptInDomain(parentKey, node2Add)) {
                     throw Exception("错误：找不到当前界面的domainTree");
@@ -295,6 +303,13 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
                   }
                   nodeDrawingDataDic.GetNodeDrawingData(parentKey)?.AddNodeDrawingData();
                 }
+
+                // 重新同步 UI 显示的 Alias (因为 AddNew... 会触发 GenerateDic)
+                if(node2Add.autoAlias){
+                  aliasController.text = node2Add.alias;
+                }
+
+                String newKey = ConceptTreeModel.GenerateDomainNodeKey(currentDomain, controllerText, node2Add.alias);
                 nodeDrawingDataDic.putIfAbsent(newKey, () => newDrawingData);
                 viewDataDic.putIfAbsent(newKey, () => newViewData);
 
@@ -311,6 +326,11 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
               }
 
               void undoCreate() {
+                //final String parentKey = selection.IsInDomain ? selection.currentDomain : selection.CurrentDomainNodeKey;
+                //final bool isParentDomain = selection.IsInDomain;
+                String currentAlias = node2Add.alias;
+                String currentKey = ConceptTreeModel.GenerateDomainNodeKey(currentDomain, controllerText, currentAlias);
+
                 if (isParentDomain) {
                   treeModel.RemoveConceptFromDomain(parentKey, node2Add);
                   domainDrawingDataDic.GetDomainDrawingData(parentKey)?.RemoveAtNodeDrawingDataSqueeze(
@@ -322,9 +342,9 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
                     treeModel.GetConceptNodeByDic(parentKey)!.children.length
                   );
                 }
-                if (!treeModel.ContainConceptNode(newKey)) {
-                  nodeDrawingDataDic.remove(newKey);
-                  viewDataDic.remove(newKey);
+                if (!treeModel.ContainConceptNode(currentKey)) {
+                  nodeDrawingDataDic.remove(currentKey);
+                  viewDataDic.remove(currentKey);
                 }
                 selection.CancelSelectionAndJumpOutParent(
                   selectedNode: node2Add,
@@ -348,13 +368,6 @@ class _CreatingConceptPanelState extends State<CreatingConceptPanel> {
               aliasController.clear();
               nameErrorCheck(treeModel, selection, "", "");
               aliasErrorCheck(treeModel, selection, "", "");
-
-              // stateModel.State = GlobalState.editingConcept;
-              // selection.SelectedConceptNode = node2Add;
-              //
-              // Size allSize = newDrawingData.nodeAppearance.nodeSize * newDrawingData.nodeAppearance.emptySize;
-              // focusNodeHelper.Init(selection.IsInDomain, selection.currentDomain, selection.CurrentDomainNodeKey, allSize);
-              // focusNodeHelper.FocusNode(node2Add, null);
             },
             child: const Text("新建概念"),
           ),

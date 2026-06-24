@@ -70,6 +70,7 @@ class _StatefulComponentState extends State<StatefulComponent> with SingleTicker
                   label: widget.componentTitle,
                   labelStyle: TextStyle(
                     fontSize: (14.0+2.0*_controller.value),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   borderSide: BorderSide(
                     width: 2,
@@ -137,12 +138,28 @@ class AnimatedStatefulComponent extends StatelessWidget{
     Color darkenBorderColor = this.darkenBorderColor == null? ColorUtils.darken(defaultBorderColor,0.2) : this.darkenBorderColor!;
     Color lightenBorderColor = this.lightenBorderColor == null? ColorUtils.lighten(defaultBorderColor,0.2) : this.lightenBorderColor!;
 
+    final brightness = Theme.of(context).brightness;
+    final isLight = brightness == Brightness.light;
+
     return TweenAnimationBuilder(
       tween: Tween(end: state),
       curve: curve,
       duration: duration,
       builder:(context,value,child){
         print("customAnimationRebuild${value}");
+// 根据主题亮度决定：正值应变深还是变浅
+        Color borderColor;
+        if (isLight) {
+          // 浅色主题：正值变深（明显），负值变浅（不明显）
+          borderColor = value > 0
+              ? Color.lerp(defaultBorderColor, darkenBorderColor, value)!
+              : Color.lerp(defaultBorderColor, lightenBorderColor, -value)!;
+        } else {
+          // 深色主题：正值变浅/亮（明显），负值变深/暗（不明显）
+          borderColor = value > 0
+              ? Color.lerp(defaultBorderColor, lightenBorderColor, value)!
+              : Color.lerp(defaultBorderColor, darkenBorderColor, -value)!;
+        }
         return Padding(
           padding: paddingOutSide,
           child: Column(
@@ -156,10 +173,11 @@ class AnimatedStatefulComponent extends StatelessWidget{
                     label: componentTitle,
                     labelStyle: TextStyle(
                       fontSize: (14.0+2.0*value),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     borderSide: BorderSide(
                         width: 2,
-                        color: value<0?Color.lerp(defaultBorderColor, darkenBorderColor, -value)!:Color.lerp(defaultBorderColor, lightenBorderColor, value)!,
+                        color: borderColor,//value<0?Color.lerp(defaultBorderColor, darkenBorderColor, -value)!:Color.lerp(defaultBorderColor, lightenBorderColor, value)!,
 
                     )
                 ),

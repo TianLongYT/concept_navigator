@@ -1,4 +1,3 @@
-
 //域树。节点树。
 import 'dart:collection';
 
@@ -27,6 +26,7 @@ class ConceptNodeTree extends NodeTree{
   List<ConceptNodeTree> children = [];
   String name = "NewConcept";
   String alias = "";
+  bool autoAlias = false; // 新增属性：是否自动生成别名
   String domainKey = "root";
   NodeTree? parent = null;
 
@@ -60,9 +60,8 @@ class ConceptNodeTree extends NodeTree{
       }
     }
   }
-
   @override String toString() {
-    return "name${name},alias${alias},children${children},childrenCount${children.length}";
+    return "name${name},alias${alias},children${children},childrenCount${children.length},autoAlias$autoAlias";
   }
 
   @override
@@ -84,6 +83,7 @@ class ConceptNodeTree extends NodeTree{
       'type': 'concept',
       'name': name,
       'alias': alias,
+      'autoAlias': autoAlias,
       'children': children.map((e) => e.toJson()).toList(),
     };
   }
@@ -91,9 +91,11 @@ class ConceptNodeTree extends NodeTree{
   factory ConceptNodeTree.fromJson(Map<String, dynamic> json,{NodeTree? parent}) {
     var node = ConceptNodeTree()
       ..name = json['name'] ?? ""
-      ..alias = json['alias'] ?? "";
+      ..alias = json['alias'] ?? ""
+      ..autoAlias = json['autoAlias'] ?? false
+      ..parent = parent;
     if (json['children'] != null) {
-      node.children = (json['children'] as List).map((e) => ConceptNodeTree.fromJson(e,parent: parent)).toList();
+      node.children = (json['children'] as List).map((e) => ConceptNodeTree.fromJson(e,parent: node)).toList();
     }
     return node;
   }
@@ -203,60 +205,76 @@ class ConceptTreeModel extends ChangeNotifier{
     // 如果未提供 domainKey，默认从 rootTree 的根路径开始生成
     String key = domainKey ?? rootTree?.name ?? "root";
     DomainTree? startTree = GetDomainTree(key);
-    print("findNull${startTree}");
     if(startTree == null) return;
     domainNodeKey2ConceptTree.clear();
-    print("getTree${startTree.GetDomainKey()}");
 
-    // 改为广度优先遍历 (BFS)，确保最先遍历到的（更高层级的）节点作为模板。
+    // 用于计数当前路径下同名节点的出现次数，支持 autoAlias
+    // Key: domainKey + parentPath + conceptName
+    Map<String, int> occurrenceCount = {};
+
     Queue<Map<String, dynamic>> queue = Queue();
     queue.add({
       'node': startTree,
       'domainKey': startTree.GetDomainKey(),
+      'parentPath': "", // 初始路径为空
     });
 
     while (queue.isNotEmpty) {
       var current = queue.removeFirst();
       var node = current['node'];
       String dKey = current['domainKey'];
+      String parentPath = current['parentPath'];
 
       if (node is DomainTree) {
-        // 先处理该域下的直属概念
         for (var concept in node.conceptNodeTree) {
           queue.add({
             'node': concept,
             'domainKey': dKey,
+            'parentPath': "", // 域下的直属概念父路径为空
           });
         }
-        // 再将子域加入队列
         for (var childDomain in node.children) {
           queue.add({
             'node': childDomain,
             'domainKey': AppendDomainKey(dKey, childDomain.name),
+            'parentPath': "",
           });
         }
       } else if (node is ConceptNodeTree) {
-        // 处理概念节点
         node.domainKey = dKey;
+
+        if (node.autoAlias) {
+          String fullPathKey = dKey + AppendOperator + parentPath + node.name;
+          int count = (occurrenceCount[fullPathKey] ?? 0) + 1;
+          occurrenceCount[fullPathKey] = count;
+
+          // autoAlias = parentPath + node.name + count (带分隔符)
+          node.alias = parentPath.isEmpty
+              ? node.name + AppendOperator + count.toString()
+              : parentPath + AppendOperator + node.name + AppendOperator + count.toString();
+        }
+
         String nodeKey = GenerateDomainNodeKey(dKey, node.name, node.alias);
-        
-        // 广度优先：如果字典中已存在该 key，则保留先遍历到的（通常是更高层级的）
         if (!domainNodeKey2ConceptTree.containsKey(nodeKey)) {
           domainNodeKey2ConceptTree[nodeKey] = node;
         }
 
-        // 将子概念加入队列
+        // 路径累加：如果 alias 为空，仅使用 name；否则使用 name + /_/ alias
+        String currentSegment = node.alias.isEmpty ? node.name : node.name + AppendOperator + node.alias;
+        String nextParentPath = parentPath.isEmpty ? currentSegment : parentPath + AppendOperator + currentSegment;
+
         for (var child in node.children) {
           queue.add({
             'node': child,
             'domainKey': dKey,
+            'parentPath': nextParentPath,
           });
         }
       }
     }
-
     notifyListeners();
   }
+
   _GenerateDicDomain(String domainKey,DomainTree domainTree){
     for(int i = 0; i<domainTree.conceptNodeTree.length;i++){
       _GenerateDicNode(domainKey, domainTree.conceptNodeTree[i]);
@@ -329,7 +347,69 @@ class ConceptTreeModel extends ChangeNotifier{
     }
     return null;
   }
+  String getAutoAlias(ConceptNodeTree tree) {
+    DomainTree? startTree = GetDomainTree(tree.domainKey);
+    if (startTree == null) return "";
 
+    Map<String, int> occurrenceCount = {};
+    Queue<Map<String, dynamic>> queue = Queue();
+    queue.add({
+      'node': startTree,
+      'domainKey': startTree.GetDomainKey(),
+      'parentPath': "",
+    });
+
+    while (queue.isNotEmpty) {
+      var current = queue.removeFirst();
+      var node = current['node'];
+      String dKey = current['domainKey'];
+      String parentPath = current['parentPath'];
+
+      if (node is DomainTree) {
+        for (var concept in node.conceptNodeTree) {
+          queue.add({
+            'node': concept,
+            'domainKey': dKey,
+            'parentPath': "",
+          });
+        }
+        for (var childDomain in node.children) {
+          queue.add({
+            'node': childDomain,
+            'domainKey': AppendDomainKey(dKey, childDomain.name),
+            'parentPath': "",
+          });
+        }
+      } else if (node is ConceptNodeTree) {
+        String fullPathKey = dKey + AppendOperator + parentPath + node.name;
+        int count = (occurrenceCount[fullPathKey] ?? 0) + 1;
+        occurrenceCount[fullPathKey] = count;
+
+        String calculatedAlias = parentPath.isEmpty
+            ? node.name + AppendOperator + count.toString()
+            : parentPath + AppendOperator + node.name + AppendOperator + count.toString();
+
+        if (node == tree) {
+          return calculatedAlias;
+        }
+
+        // 确定路径传递使用的有效别名（如果是自动别名则使用刚计算出的）
+        String effectiveAlias = node.autoAlias ? calculatedAlias : node.alias;
+        // 如果有效别名为空，仅使用 name；否则使用 name + /_/ alias
+        String currentSegment = effectiveAlias.isEmpty ? node.name : node.name + AppendOperator + effectiveAlias;
+        String nextParentPath = parentPath.isEmpty ? currentSegment : parentPath + AppendOperator + currentSegment;
+
+        for (var child in node.children) {
+          queue.add({
+            'node': child,
+            'domainKey': dKey,
+            'parentPath': nextParentPath,
+          });
+        }
+      }
+    }
+    return "";
+  }
   static const String AppendOperator = "/_/";//把_/设置为禁用组合。
   static const List<String> ErrorPatten = ["_/","/_","/_/"];
   static String GenerateDomainNodeKey(String domain,String name,String alias){
@@ -399,7 +479,7 @@ class ConceptTreeModel extends ChangeNotifier{
     if(keys1.length < keys2.length){
       return null;
     }
-    for(int i = 0;i<keys2.length;i++){
+    for(int i =0;i<keys2.length;i++){
       if(keys1[i] != keys2[i]){
         print("交换失败,发现Keys1:${keys1[i]}!=${keys2[i]}");
         return null;

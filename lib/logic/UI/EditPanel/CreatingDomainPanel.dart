@@ -120,8 +120,9 @@ class _CreatingDomainPanelState extends State<CreatingDomainPanel> {
           ),
 
           OutlinedButton(onPressed:hasError?null: (){
-            if(hasError)
+            if(hasError){
               return;
+            }
 
             DomainTree domain2Add = DomainTree()..name = controller.text;
             DomainDrawingData newDrawingData = DomainDrawingData(nodeAppearance: NodeAppearance())..text = controller.text;
